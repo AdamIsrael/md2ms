@@ -1,5 +1,5 @@
-# md2ms -- Markdown to Standard Manuscript Format
+# md2ms
 
-## TODO
+Convert Markdown file(s) to Shunn's [Standard Manuscript Format](https://www.shunn.net/format/story/1/) in docx format.
 
-Parsing frontmatter better. Right now it's generating a title and byline that doesn't match the rest of the manuscript.
+This is a work-in-progress and is not yet ready for general use. It is being developed for my own use, to generate manuscripts for submission to publishers based on the contents of an [Obsidian](https://obsidian.md/) vault.
