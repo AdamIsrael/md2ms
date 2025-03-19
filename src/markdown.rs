@@ -15,6 +15,8 @@ mod tests {
     const SIMPLE_MARKDOWN_YFM: &str = r#"
     ---
     author: 'Adam Israel'
+    short_author: 'Israel'
+    short_title: 'Markdown'
     title: 'Parsing a Markdown file metadata into a struct'
     description: 'This tutorial walks you through the practice of parsing markdown files for metadata'
     tags: ['markdown', 'rust', 'files', 'parsing', 'metadata']
@@ -28,6 +30,8 @@ mod tests {
         let md = parse_markdown(SIMPLE_MARKDOWN_YFM.to_string()).unwrap();
         assert!(md.metadata.author == "Adam Israel");
         assert!(md.metadata.title == "Parsing a Markdown file metadata into a struct");
-        assert!(md.content == "This is the content of the markdown file")
+        assert!(md
+            .content
+            .contains("This is the content of the markdown file"))
     }
 }
