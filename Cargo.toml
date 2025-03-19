@@ -1,0 +1,20 @@
+[package]
+name = "md2ms"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = ["content", "frontmatter"]
+
+[workspace.dependencies]
+clap = { version = "4.0", features = ["derive"] }
+
+[dependencies]
+docx-rs = { git = "https://github.com/bokuweb/docx-rs.git" }
+clap = { version = "4.0", features = ["derive"] }
+pandoc = "0.8.11"
+serde = "1.0.218"
+tempfile = "3.18.0"
+words-count = "0.1.6"
+yaml-front-matter = "0.1.0"
+regex = "1.11.1"
