@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# Need to use the git version of docx-rs to enable inserting page numbers into the header
 docx-rs = { git = "https://github.com/bokuweb/docx-rs.git" }
 clap = { version = "4.0", features = ["derive"] }
 serde = "1.0.218"

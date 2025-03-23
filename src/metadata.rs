@@ -1,15 +1,15 @@
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Deserialize, Debug)]
 pub struct Metadata {
     pub content_warnings: Option<Vec<String>>,
-    pub scenes: Option<Vec<String>>,
+    pub include: Option<Vec<String>>,
 
     /// The shortened title of the story, used in the manuscript header.
-    pub short_title: String,
+    pub short_title: Option<String>,
 
     /// The shortened name of the author, used in the manuscript header.
-    pub short_author: String,
-    pub title: String,
-    pub author: String,
+    pub short_author: Option<String>,
+    pub title: Option<String>,
+    pub author: Option<String>,
 }
