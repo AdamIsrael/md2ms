@@ -1,6 +1,18 @@
 ---
-word_goal: 600
-type: scene
+author: "Adam Israel"
+title: "Lorem ipsum"
+short_title: "Ipsum"
+short_author: "Israel"
+content_warnings:
+  - "violence"
+  - "death"
+  - "gore"
+  - "blood"
+tags:
+  - horror
+  - cozy
+word_goal: 2000
+type: story
 ---
 
 [Lorem ipsum](https://www.lipsum.com/) dolor sit amet, consectetur adipiscing elit. Ut ut ullamcorper eros, vel auctor sapien. Suspendisse potenti. Nullam laoreet sem ut ipsum convallis, dictum vestibulum arcu tempus. Nulla in fermentum magna. Cras viverra turpis felis, non molestie justo fermentum quis. Donec magna arcu, tempor sit amet venenatis non, bibendum dignissim ligula. Duis maximus vel erat nec eleifend. In id iaculis lorem. Cras eu ipsum aliquet, bibendum mi id, dignissim diam. Mauris pretium elit at rhoncus lobortis. Donec ac rhoncus purus, a tristique mauris. Aenean sollicitudin ligula libero, vel ornare lectus euismod sed. Nulla porta justo a purus congue consequat. Cras eu lorem vehicula, bibendum neque vitae, posuere nunc.

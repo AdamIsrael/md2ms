@@ -21,6 +21,7 @@ pub fn parse_markdown(md: String) -> Result<Document<Metadata>, &'static str> {
         metadata: Metadata {
             author: None,
             content_warnings: None,
+            heading: None,
             include: None,
             short_title: None,
             short_author: None,

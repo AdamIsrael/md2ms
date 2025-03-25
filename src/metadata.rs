@@ -12,4 +12,7 @@ pub struct Metadata {
     pub short_author: Option<String>,
     pub title: Option<String>,
     pub author: Option<String>,
+
+    /// The heading to use when rendering the child documents
+    pub heading: Option<String>,
 }
