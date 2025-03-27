@@ -1,14 +1,12 @@
 // Syntax: md2ms [options] <file>
-// m2ms --reference-doc <file> --output-dir <dir> --data-dir <dir>  <files>
+// m2ms --output-dir <dir> <files>
 use clap::Parser;
 use yaml_front_matter::Document;
 
 use docx_rs::*;
 use md2ms::context::Context;
-use md2ms::markdown::parse_markdown;
 use md2ms::metadata::Metadata;
-use md2ms::utils::{get_file_basedir, round_up, slurp};
-use std::fs::metadata;
+use md2ms::utils::{get_file_basedir, round_up};
 use std::path::PathBuf;
 
 use words_count;
@@ -49,31 +47,61 @@ fn flatten_markdown(
             if sep.raw_text().len() > 0 {
                 paragraphs.push(sep.clone());
             }
-            md.content.lines().for_each(|line| {
-                if line.len() > 0 {
-                    paragraphs.push(
-                        Paragraph::new()
-                            .add_run(Run::new().add_text(line).size(24))
-                            .line_spacing(
-                                LineSpacing::new()
-                                    // https://stackoverflow.com/questions/19719668/how-is-line-spacing-measured-in-ooxml
-                                    .line_rule(LineSpacingType::Auto)
-                                    .line(480), // double spaced
-                            )
-                            // Indent the first line
-                            // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
-                            // 1.48cm == 0.5826772 inches == 839.05 dxa
-                            .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None),
-                    );
+
+            // If there is a heading in the metadata, add it here.
+            md.metadata.heading.clone().map(|heading| {
+                // TODO: Add page break before the heading
+                // Center heading on page?
+                // TODO: Only page break/center if it's a new section. A new chapter,
+                // for example, should start at the top of a new page
+                paragraphs.push(
+                    Paragraph::new()
+                        .add_run(Run::new().add_text("").size(24))
+                        .align(AlignmentType::Center)
+                        .page_break_before(true)
+                        .line_spacing(LineSpacing::new().after_lines(100)),
+                );
+
+                for _ in 0..23 {
+                    // heading.insert(0, '\n');
+                    paragraphs.push(Paragraph::new());
                 }
+                paragraphs.push(
+                    Paragraph::new()
+                        .add_run(Run::new().add_text(heading).size(24))
+                        .align(AlignmentType::Center)
+                        // .page_break_before(true)
+                        .line_spacing(LineSpacing::new().after_lines(100)),
+                );
             });
 
-            // FIX: don't create this in a loop
-            sep = Paragraph::new()
-                .add_run(Run::new().add_text("#"))
-                .align(AlignmentType::Center)
-                .size(24)
-                .line_spacing(LineSpacing::new().after_lines(100));
+            if md.content.lines().count() > 0 {
+                md.content.lines().for_each(|line| {
+                    if line.len() > 0 {
+                        paragraphs.push(
+                            Paragraph::new()
+                                .add_run(Run::new().add_text(line).size(24))
+                                .line_spacing(
+                                    LineSpacing::new()
+                                        // https://stackoverflow.com/questions/19719668/how-is-line-spacing-measured-in-ooxml
+                                        .line_rule(LineSpacingType::Auto)
+                                        .line(480), // double spaced
+                                )
+                                // Indent the first line
+                                // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
+                                // 1.48cm == 0.5826772 inches == 839.05 dxa
+                                .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None),
+                        );
+                    }
+                });
+
+                // FIX: don't create this in a loop
+                sep = Paragraph::new()
+                    .add_run(Run::new().add_text("#"))
+                    .align(AlignmentType::Center)
+                    .size(24)
+                    .line_spacing(LineSpacing::new().after_lines(100));
+            }
         } else {
             // TODO: Handle this better. Return an Err maybe?
             // If a file is noted to be included, but we can't find it, that's a problem.
@@ -189,15 +217,17 @@ pub fn main() -> Result<(), DocxError> {
         // println!("{:?}", table);
 
         let title = Paragraph::new()
-            .add_run(Run::new().add_text(metadata.title.unwrap()))
+            .add_run(Run::new().add_text(metadata.title.unwrap()).size(24))
             .align(AlignmentType::Center)
-            .size(24)
             .line_spacing(LineSpacing::new().after_lines(100));
 
         let byline = Paragraph::new()
-            .add_run(Run::new().add_text(format!("by {}", metadata.author.unwrap())))
-            .align(AlignmentType::Center)
-            .size(24);
+            .add_run(
+                Run::new()
+                    .add_text(format!("by {}", metadata.author.unwrap()))
+                    .size(24),
+            )
+            .align(AlignmentType::Center);
 
         let end = Paragraph::new()
             .add_run(Run::new().add_text("END"))
@@ -218,10 +248,12 @@ pub fn main() -> Result<(), DocxError> {
                 .add_page_num(PageNum::new()),
         );
 
+        let font = args.font.unwrap_or("Times New Roman".to_string());
+
         let mut doc = Docx::new()
             // .add_style(s)
             // Add flag to set the default font? TNR is a fine default, but some markets want Courier (and I like it better)
-            .default_fonts(RunFonts::new().ascii("Times New Roman"))
+            .default_fonts(RunFonts::new().ascii(font))
             .header(header)
             .first_header(Header::new())
             .add_table(table)

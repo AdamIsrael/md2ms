@@ -6,10 +6,10 @@ This is a work-in-progress and is not yet ready for general use. It is being dev
 
 ## TODO
 
-- auto-detecting/inserting and formatting scene breaks
-- Multiple Markdown documents
-- Multiple font support, i.e., Times New Roman and Courier.
-	- Let the user specify the font
+- ~~auto-detecting/inserting and formatting scene breaks~~
+- ~~Multiple Markdown documents~~
+- ~~Multiple font support, i.e., Times New Roman and Courier.~~
+	- ~~Let the user specify the font~~
 - Add a configuration file (local, global, and CLI flag) that defines standard behavior.
 	- Font(s) to use
 	- Output location

@@ -14,8 +14,13 @@ tags:
 word_goal: 20000
 type: novella
 include:
+- Act 1/metadata.md
 - Act 1/Chapter 1/scene 1.md
 - Act 1/Chapter 1/scene 2.md
 - Act 1/Chapter 1/scene 3.md
+- Act 1/Chapter 2/scene 1.md
+- Act 1/Chapter 2/scene 2.md
+- Act 1/Chapter 2/scene 3.md
+
 ---
 Any content in metadata.md will be ignored. This file is for frontmatter only, and defines the metadata for the story.

@@ -1,3 +1,0 @@
----
-heading: Chapter 1
----

@@ -34,22 +34,22 @@ impl Context {
         })
     }
 
-    pub fn get_file_metadata(self, file: String) -> Metadata {
+    /// Not sure if this is needed anymore, or in its current state.
+    /// I decided to move the header metadata into the scene, to make it easier to manage.
+    /// I still need to handle "section" metadata, which this function doesn't quite cover.
+    pub fn get_file_metadata(&mut self, file: String) -> Metadata {
         let mut p = get_file_basedir(format!("{}/{}", self.basedir, file));
         // Remove the basedir from the path
 
         p.push_str("/metadata.md");
         p = p.trim_start_matches('/').to_string();
 
-        // let path = Path::new(&file);
-        println!("true path for {} -> {:?}", file, p);
-        let md = metadata(&p).unwrap();
-        if md.is_file() {
-            // print!("Slurping {}...", file);
-            let md = slurp(format!("{}/{}", self.basedir, file));
-            // println!("Slurped!");
-            if let Ok(md) = parse_markdown(md) {
-                return md.metadata;
+        if let Ok(md) = metadata(&p) {
+            if md.is_file() {
+                let md = slurp(p);
+                if let Ok(md) = parse_markdown(md) {
+                    return md.metadata;
+                }
             }
         }
         Metadata {
