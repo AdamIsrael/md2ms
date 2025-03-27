@@ -1,23 +1,21 @@
 // Syntax: md2ms [options] <file>
-// m2ms --reference-doc <file> --output-dir <dir> --data-dir <dir>  <files>
+// m2ms --output-dir <dir> <files>
 use clap::Parser;
-// use pandoc::OutputKind;
-
-use std::fs::File;
-use std::io::{self, Read};
-use std::path::PathBuf;
+use yaml_front_matter::Document;
 
 use docx_rs::*;
-use md2ms::markdown::parse_markdown;
-use regex::Regex;
+use md2ms::context::Context;
+use md2ms::metadata::Metadata;
+use md2ms::utils::{get_file_basedir, round_up};
+use std::path::PathBuf;
 
 use words_count;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// The Markdown file containing the manuscript
-    filename: String,
+    /// The file or directory containing the manuscript in Markdown format
+    filename_or_path: String,
 
     /// The font to use in the manuscript
     #[arg(long, value_name = "Times New Roman")]
@@ -28,29 +26,188 @@ struct Args {
     output_dir: Option<PathBuf>,
 }
 
-// fn main() {
+/// Convert the content of a Markdown into a collection of paragraphs.
+fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
+    let mut paragraphs: Vec<Paragraph> = vec![];
+    let sep = Paragraph::new()
+        .add_run(Run::new().add_text("#"))
+        .align(AlignmentType::Center)
+        .size(24)
+        .line_spacing(LineSpacing::new().after_lines(100));
+
+    if content.lines().count() > 0 {
+        content.lines().for_each(|line| {
+            if line.len() > 0 {
+                // need an "is separator function"
+                if line.trim() == "#" {
+                    paragraphs.push(sep.clone());
+                } else {
+                    paragraphs.push(
+                        Paragraph::new()
+                            .add_run(Run::new().add_text(line).size(24))
+                            .line_spacing(
+                                LineSpacing::new()
+                                    // https://stackoverflow.com/questions/19719668/how-is-line-spacing-measured-in-ooxml
+                                    .line_rule(LineSpacingType::Auto)
+                                    .line(480), // double spaced
+                            )
+                            // Indent the first line
+                            // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
+                            // 1.48cm == 0.5826772 inches == 839.05 dxa
+                            .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None),
+                    );
+                }
+            }
+        });
+    }
+    paragraphs
+}
+
+// I think this needs to be refactored to return a collection of Paragraphs, so that we can insert things like chapter titles
+// and the like between them. Kinda ugh, but that'll also fix how to center the scene breaks.
+fn flatten_markdown(
+    ctx: &mut Context,
+    document: Document<Metadata>,
+) -> Result<Vec<Paragraph>, &'static str> {
+    let mut paragraphs: Vec<Paragraph> = vec![];
+    let mut sep = Paragraph::new();
+
+    // TODO: support variable font sizes (typically 10/12pt.
+    // If the metadata doesn't include an include stanza, there's nothing to flatten; it's a standalone document.
+    if document.metadata.include.is_none() {
+        println!("No include in metadata");
+        return Ok(content_to_paragraphs(document.content));
+    }
+
+    for file in document.metadata.include.clone().unwrap() {
+        // TODO: need the folders where we might want to show the chapter or act numbers.
+        // I've added a per-folder metadata file, but need to handle it.
+        // let markdown = ctx.get_file_metadata(file.clone());
+        // println!("Markdown for {}: {:?}", file, markdown);
+
+        if let Some(md) = ctx.get_file(file) {
+            // is this still needed?
+            if sep.raw_text().len() > 0 {
+                paragraphs.push(sep.clone());
+            }
+
+            // If there is a heading in the metadata, add it here.
+            md.metadata.heading.clone().map(|heading| {
+                // TODO: Add page break before the heading
+                // Center heading on page?
+                // TODO: Only page break/center if it's a new section. A new chapter,
+                // for example, should start at the top of a new page
+                paragraphs.push(
+                    Paragraph::new()
+                        .add_run(Run::new().add_text("").size(24))
+                        .align(AlignmentType::Center)
+                        .page_break_before(true)
+                        .line_spacing(LineSpacing::new().after_lines(100)),
+                );
+
+                for _ in 0..23 {
+                    paragraphs.push(Paragraph::new());
+                }
+                paragraphs.push(
+                    Paragraph::new()
+                        .add_run(Run::new().add_text(heading).size(24))
+                        .align(AlignmentType::Center)
+                        // .page_break_before(true)
+                        .line_spacing(LineSpacing::new().after_lines(100)),
+                );
+            });
+
+            let mut p = content_to_paragraphs(md.content);
+            if p.len() > 0 {
+                paragraphs.append(&mut p);
+
+                sep = Paragraph::new()
+                    .add_run(Run::new().add_text("#"))
+                    .align(AlignmentType::Center)
+                    .size(24)
+                    .line_spacing(LineSpacing::new().after_lines(100));
+            }
+        } else {
+            // TODO: Handle this better. Return an Err maybe?
+            // If a file is noted to be included, but we can't find it, that's a problem.
+            // println!("Failed to get file: {}", file);
+        }
+    }
+
+    Ok(paragraphs)
+}
+
 pub fn main() -> Result<(), DocxError> {
     // Take the filename from positional arguments
     let args = Args::parse();
 
-    // Slurp the file
-    let md = slurp(args.filename);
+    let mut ctx = Context::new(args.filename_or_path.clone());
+    // for file in ctx.files.keys() {
+    //     // println!("{}/{}", path_dir, file);
+    //     println!("File: {}", file);
+    // }
+
+    // return Ok(());
+
+    // If filename_or_path is a directory, process all the files in the directory
+    // and look for the metadata to assemble the manuscript
+
+    let basedir = get_file_basedir(args.filename_or_path.clone());
+    println!("Got basedir: {:?}", basedir);
+    // let files = get_files(basedir.clone(), args.filename_or_path.clone());
+    // for file in files.keys() {
+    //     println!("{}/{}", path_dir, file);
+    // }
+
+    // If there are no files, exit.
+    if ctx.files.len() == 0 {
+        println!("No files found in {:?}", args.filename_or_path);
+        return Ok(());
+    }
+
+    let mut mddoc = Document {
+        metadata: Metadata {
+            content_warnings: None,
+            author: None,
+            short_author: None,
+            heading: None,
+            include: None,
+            short_title: None,
+            title: None,
+        },
+        content: "".to_string(),
+    };
+
+    // Check for the presence of base metadata.md
+    if ctx.files.contains_key("metadata.md") {
+        println!("Got metadata!");
+        if let Some(metadata) = ctx.files.get("metadata.md") {
+            mddoc.metadata = metadata.metadata.clone();
+        }
+    } else {
+        // use the metadata from the first file
+        println!("Found standalone file?");
+        ctx.files.values().next().map(|v| {
+            mddoc.metadata = v.metadata.clone();
+            mddoc.content = v.content.clone();
+        });
+    }
+
+    // Now that we have the file(s), we can join them into one document
 
     // Parse the Markdown
-    if let Ok(mut md) = parse_markdown(md) {
+    let metadata = mddoc.metadata.clone();
+    if let Ok(md) = flatten_markdown(&mut ctx, mddoc) {
         // Using this crate for now, but maybe convert this to my own code
-        let wc = words_count::count(&md.content);
+        let wc = words_count::count(&md.iter().map(|p| p.raw_text()).collect::<String>());
 
-        // // Round up
+        // Round up
         let nwc = round_up(wc.words);
         println!("Approximate Word count: {}", nwc);
-        // md.content = md.content.replace("{WORDCOUNT}", nwc.to_string().as_str());
 
-        // Eliminate double whitespace
-        let re = Regex::new(r"\s+").unwrap();
-        md.content = re.replace_all(md.content.as_str(), " ".to_string()).into();
-
-        let docx_file = format!("{}.docx", md.metadata.title);
+        // // Eliminate double whitespace
+        // println!("Metadata: {:?}", metadata);
+        let docx_file = format!("{}.docx", metadata.title.clone().unwrap());
         let path = std::path::Path::new(&docx_file);
         let file = std::fs::File::create(path).unwrap();
 
@@ -77,29 +234,37 @@ pub fn main() -> Result<(), DocxError> {
             ),
         ])]);
 
-        // TODO: Turn off borders
-        //
+        // Turn off borders
+        table = table.clear_all_border();
+
         // This is a hack. Can't seem to find a way to set it to autofit, but this works because it's an 8 inch page, with 1 inch margins
         table = table.width(1440 * 6, WidthType::Dxa);
         // println!("{:?}", table);
 
         let title = Paragraph::new()
-            .add_run(Run::new().add_text(md.metadata.title))
+            .add_run(Run::new().add_text(metadata.title.unwrap()).size(24))
+            .align(AlignmentType::Center)
+            .line_spacing(LineSpacing::new().after_lines(100));
+
+        let byline = Paragraph::new()
+            .add_run(
+                Run::new()
+                    .add_text(format!("by {}", metadata.author.unwrap()))
+                    .size(24),
+            )
+            .align(AlignmentType::Center);
+
+        let end = Paragraph::new()
+            .add_run(Run::new().add_text("END"))
             .align(AlignmentType::Center)
             .size(24)
             .line_spacing(LineSpacing::new().after_lines(100));
 
-        let byline = Paragraph::new()
-            .add_run(Run::new().add_text(format!("by {}", md.metadata.author)))
-            .align(AlignmentType::Center)
-            .size(24);
-
-        // 46 lines per page. Need to calculate the halfway point and add blank paragraphs to center the title
-
-        // TODO: get the short author name and title from the metadata
+        // Get the short author name and title from the metadata
         let header_text = format!(
             "{} / {} / ",
-            md.metadata.short_author, md.metadata.short_title
+            metadata.short_author.unwrap(),
+            metadata.short_title.unwrap()
         );
         let header = Header::new().add_paragraph(
             Paragraph::new()
@@ -108,137 +273,48 @@ pub fn main() -> Result<(), DocxError> {
                 .add_page_num(PageNum::new()),
         );
 
+        let font = args.font.unwrap_or("Times New Roman".to_string());
+
         let mut doc = Docx::new()
             // .add_style(s)
-            // Add flag to set the default font? TNR is a fine default, but some markets want Courier
-            .default_fonts(RunFonts::new().ascii("Times New Roman"))
+            // Add flag to set the default font? TNR is a fine default, but some markets want Courier (and I like it better)
+            .default_fonts(RunFonts::new().ascii(font))
             .header(header)
             .first_header(Header::new())
             .add_table(table)
+            // There are 46 lines per page. The title should appear at the 1/3 to 1/2 point
+            // So 15 lines down, including the header (5-6 lines)
             .add_paragraph(Paragraph::new())
             .add_paragraph(Paragraph::new())
             .add_paragraph(Paragraph::new())
             .add_paragraph(Paragraph::new())
             .add_paragraph(Paragraph::new())
+            .add_paragraph(Paragraph::new())
+            .add_paragraph(Paragraph::new())
+            .add_paragraph(Paragraph::new())
+            .add_paragraph(Paragraph::new())
+            .add_paragraph(Paragraph::new())
+            // Add the title and byline
             .add_paragraph(title)
             .add_paragraph(byline)
             .add_paragraph(Paragraph::new())
             .add_paragraph(Paragraph::new());
 
-        let mut body: Vec<Paragraph> = vec![];
-
-        md.content.lines().for_each(|line| {
-            if line.len() > 0 {
-                body.push(
-                    Paragraph::new()
-                        .add_run(Run::new().add_text(line).size(24))
-                        // .line_spacing(dbl_spacing.clone())
-                        .line_spacing(
-                            LineSpacing::new()
-                                // https://stackoverflow.com/questions/19719668/how-is-line-spacing-measured-in-ooxml
-                                .line_rule(LineSpacingType::Auto)
-                                .line(480), // double spaced
-                        )
-                        // Indent the first line
-                        // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
-                        // 1.48cm == 0.5826772 inches == 839.05 dxa
-                        .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None),
-                )
-            }
-        });
-
-        for p in body {
+        // Now we need to add the content of the manuscript
+        for p in md {
             doc = doc.add_paragraph(p);
         }
 
+        // Signal the end of the document
+        doc = doc.add_paragraph(end);
+
         // Build and pack the document
         doc.build().pack(file)?;
-
-        // // Convert the Markdown to a Word document
-        // let mut pandoc = pandoc::new();
-
-        // if let Some(data_dir) = args.data_dir {
-        //     println!("Setting Data Directory to {:?}", data_dir);
-        //     pandoc.add_option(pandoc::PandocOption::DataDir(data_dir));
-        // }
-
-        // // pandoc.add_option(pandoc::PandocOption::Verbose);
-        // // pandoc.set_show_cmdline(true);
-        // // header = header.replace("$<WC>", nwc.to_string().as_str());
-
-        // // set reference doc
-        // if let Some(reference_doc) = args.reference_doc {
-        //     pandoc.add_option(pandoc::PandocOption::ReferenceDoc(reference_doc));
-        // }
-
-        // // Run in standalone
-        // pandoc.add_option(pandoc::PandocOption::Standalone);
-
-        // // I think this is failing because I'm not setting that this is a latex input
-        // // so using a temporary file with the right extension does the trick.
-        // //
-        // // use tempfile::Builder to create a temp file with the right extension
-        // // let f = tempfile::Builder::new().suffix(".tex").tempfile();
-        // // if let Ok(mut f) = f {
-        // //     // this is working, but the output file is putting the title in the header.
-        // //     println!("Created temp file {}", f.path().display());
-        // //     let _ = f.write_all(latex_template.as_bytes());
-        // //     let pb = PathBuf::from(f.path());
-        // //     let files = vec![pb];
-        // //     pandoc.set_input(pandoc::InputKind::Files(files));
-
-        // pandoc.set_input(pandoc::InputKind::Pipe(md.content.as_str().into()));
-
-        // // Maybe split the latex into parts and add them to pandoc this way?
-        // // let header = PathBuf::from("data/header.tex");
-        // // pandoc.add_option(pandoc::PandocOption::IncludeBeforeBody(header));
-
-        // // pandoc.add_option(pandoc::PandocOption::IncludeAfterBody(()))
-
-        // let output_dir = args
-        //     .output_dir
-        //     .unwrap_or_else(|| PathBuf::from("."))
-        //     .into_os_string()
-        //     .into_string()
-        //     .unwrap();
-
-        // pandoc.set_output(OutputKind::File(
-        //     format!("{}/{}.docx", output_dir, md.metadata.title).into(),
-        // ));
-
-        // let exec = pandoc.execute();
-        // if let Ok(_exec) = exec {
-        //     println!("Pandoc executed successfully.");
-        // } else {
-        //     println!("Pandoc failed to execute: {:?}", exec.err());
-        // }
     }
     Ok(())
 }
 
-fn slurp(filename: String) -> String {
-    let mut input: io::BufReader<File> =
-        io::BufReader::new(File::open(filename).expect("didn't work"));
-    let mut md = String::new();
-    input.read_to_string(&mut md).expect("can't read string");
-    md
-}
-
-/// Round up to the nearest 100 or 500 (depending on length)
-/// Per Bill Shunn, round up to the nearest 100 words unless you're entering novella territory,
-/// in which case round up to the nearest 500 words.
-/// "The point of a word count is not to tell your editor the exact length of the manuscript,
-/// but approximately how much space your story will take up in the publication."
-///
-/// Consider the case of less than 100 words, maybe print out <100? In which case, I'd need to return this as a string
-fn round_up(wc: usize) -> usize {
-    let mut wc = wc;
-    if wc > 17500 {
-        wc += 500;
-        wc -= wc % 500;
-        return wc;
-    }
-    wc += 100;
-    wc -= wc % 100;
-    wc
+#[cfg(test)]
+mod tests {
+    use super::*;
 }
