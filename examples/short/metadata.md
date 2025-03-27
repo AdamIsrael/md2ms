@@ -1,7 +1,7 @@
 ---
 author: "Adam Israel"
-title: "Lorem ipsum"
-short_title: "Ipsum"
+title: "Short Story"
+short_title: "Short"
 short_author: "Israel"
 content_warnings:
   - "violence"

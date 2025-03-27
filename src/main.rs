@@ -26,6 +26,43 @@ struct Args {
     output_dir: Option<PathBuf>,
 }
 
+/// Convert the content of a Markdown into a collection of paragraphs.
+fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
+    let mut paragraphs: Vec<Paragraph> = vec![];
+    let sep = Paragraph::new()
+        .add_run(Run::new().add_text("#"))
+        .align(AlignmentType::Center)
+        .size(24)
+        .line_spacing(LineSpacing::new().after_lines(100));
+
+    if content.lines().count() > 0 {
+        content.lines().for_each(|line| {
+            if line.len() > 0 {
+                // need an "is separator function"
+                if line.trim() == "#" {
+                    paragraphs.push(sep.clone());
+                } else {
+                    paragraphs.push(
+                        Paragraph::new()
+                            .add_run(Run::new().add_text(line).size(24))
+                            .line_spacing(
+                                LineSpacing::new()
+                                    // https://stackoverflow.com/questions/19719668/how-is-line-spacing-measured-in-ooxml
+                                    .line_rule(LineSpacingType::Auto)
+                                    .line(480), // double spaced
+                            )
+                            // Indent the first line
+                            // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
+                            // 1.48cm == 0.5826772 inches == 839.05 dxa
+                            .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None),
+                    );
+                }
+            }
+        });
+    }
+    paragraphs
+}
+
 // I think this needs to be refactored to return a collection of Paragraphs, so that we can insert things like chapter titles
 // and the like between them. Kinda ugh, but that'll also fix how to center the scene breaks.
 fn flatten_markdown(
@@ -33,17 +70,23 @@ fn flatten_markdown(
     document: Document<Metadata>,
 ) -> Result<Vec<Paragraph>, &'static str> {
     let mut paragraphs: Vec<Paragraph> = vec![];
-
     let mut sep = Paragraph::new();
-    for file in document.metadata.include.clone().unwrap() {
-        println!("File: {}", file);
 
+    // TODO: support variable font sizes (typically 10/12pt.
+    // If the metadata doesn't include an include stanza, there's nothing to flatten; it's a standalone document.
+    if document.metadata.include.is_none() {
+        println!("No include in metadata");
+        return Ok(content_to_paragraphs(document.content));
+    }
+
+    for file in document.metadata.include.clone().unwrap() {
         // TODO: need the folders where we might want to show the chapter or act numbers.
         // I've added a per-folder metadata file, but need to handle it.
         // let markdown = ctx.get_file_metadata(file.clone());
         // println!("Markdown for {}: {:?}", file, markdown);
 
         if let Some(md) = ctx.get_file(file) {
+            // is this still needed?
             if sep.raw_text().len() > 0 {
                 paragraphs.push(sep.clone());
             }
@@ -63,7 +106,6 @@ fn flatten_markdown(
                 );
 
                 for _ in 0..23 {
-                    // heading.insert(0, '\n');
                     paragraphs.push(Paragraph::new());
                 }
                 paragraphs.push(
@@ -75,27 +117,10 @@ fn flatten_markdown(
                 );
             });
 
-            if md.content.lines().count() > 0 {
-                md.content.lines().for_each(|line| {
-                    if line.len() > 0 {
-                        paragraphs.push(
-                            Paragraph::new()
-                                .add_run(Run::new().add_text(line).size(24))
-                                .line_spacing(
-                                    LineSpacing::new()
-                                        // https://stackoverflow.com/questions/19719668/how-is-line-spacing-measured-in-ooxml
-                                        .line_rule(LineSpacingType::Auto)
-                                        .line(480), // double spaced
-                                )
-                                // Indent the first line
-                                // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
-                                // 1.48cm == 0.5826772 inches == 839.05 dxa
-                                .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None),
-                        );
-                    }
-                });
+            let mut p = content_to_paragraphs(md.content);
+            if p.len() > 0 {
+                paragraphs.append(&mut p);
 
-                // FIX: don't create this in a loop
                 sep = Paragraph::new()
                     .add_run(Run::new().add_text("#"))
                     .align(AlignmentType::Center)
@@ -159,29 +184,29 @@ pub fn main() -> Result<(), DocxError> {
         if let Some(metadata) = ctx.files.get("metadata.md") {
             mddoc.metadata = metadata.metadata.clone();
         }
-        // access the metadata
+    } else {
+        // use the metadata from the first file
+        println!("Found standalone file?");
+        ctx.files.values().next().map(|v| {
+            mddoc.metadata = v.metadata.clone();
+            mddoc.content = v.content.clone();
+        });
     }
 
     // Now that we have the file(s), we can join them into one document
 
     // Parse the Markdown
-    // if let Ok(md) = parse_markdown(md) {
     let metadata = mddoc.metadata.clone();
     if let Ok(md) = flatten_markdown(&mut ctx, mddoc) {
         // Using this crate for now, but maybe convert this to my own code
-        // let wc = words_count::count(&md.content);
-        // TODO: This is a hack. I need to figure out how to get the word count from the entire document
         let wc = words_count::count(&md.iter().map(|p| p.raw_text()).collect::<String>());
 
-        // // Round up
+        // Round up
         let nwc = round_up(wc.words);
         println!("Approximate Word count: {}", nwc);
-        // md.content = md.content.replace("{WORDCOUNT}", nwc.to_string().as_str());
 
         // // Eliminate double whitespace
-        // let re = Regex::new(r"\s+").unwrap();
-        // md.content = re.replace_all(md.content.as_str(), " ".to_string()).into();
-
+        // println!("Metadata: {:?}", metadata);
         let docx_file = format!("{}.docx", metadata.title.clone().unwrap());
         let path = std::path::Path::new(&docx_file);
         let file = std::fs::File::create(path).unwrap();

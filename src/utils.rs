@@ -32,6 +32,17 @@ pub fn slurp(filename: String) -> String {
 
 /// Get the filename relative to the base directory.
 pub fn get_base_filename(basedir: String, path: String) -> String {
+    // If the basedir is the same as the path, we have a standalone file and just need its name.
+    if basedir == path {
+        let pb = PathBuf::from(path);
+        if pb.is_file() {
+            if let Some(file) = pb.file_name() {
+                return file.to_str().unwrap().to_string();
+            }
+        }
+        println!("Returning empty");
+        return "".to_string();
+    }
     let relative = path
         .replace(basedir.as_str(), "")
         .trim_start_matches('/')
@@ -61,9 +72,19 @@ mod tests {
         assert_eq!(base, "");
     }
     #[test]
-    fn test_get_base_filename_single_file() {
+    /// md2ms examples/short
+    fn test_get_base_filename_short() {
+        let path = "examples/short/scene1.md";
+        let base = get_base_filename("examples/short".to_string(), path.to_string());
+        assert_eq!(base, "scene1.md");
+    }
+
+    #[test]
+    /// Similar to test_get_base_filename, but we've received the path to a file
+    /// md2ms examples/standalone.md
+    fn test_get_base_filename_standalone() {
         let path = "examples/standalone.md";
-        let base = get_base_filename("examples/".to_string(), path.to_string());
+        let base = get_base_filename("examples/standalone.md".to_string(), path.to_string());
         assert_eq!(base, "standalone.md");
     }
 
