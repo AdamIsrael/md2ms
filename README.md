@@ -31,6 +31,9 @@ This is a work-in-progress and is not yet ready for general use. It is being dev
 
 ## Documentation
 
+### PII - Author's Personally Identifiable information
+
+Unless the `--anonymous`
 ### Scene Breaks
 
 There are three types of scene breaks that are auto-deteected:

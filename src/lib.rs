@@ -4,12 +4,16 @@ pub mod markdown;
 pub mod metadata;
 pub mod utils;
 
-use clap::Parser;
+use clap::{ArgAction, Parser};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
+    /// If set, strip any personally identifying information from the manuscript
+    #[arg(long, action=ArgAction::SetTrue)]
+    pub anonymous: Option<bool>,
+
     /// The file or directory containing the manuscript in Markdown format
     pub filename_or_path: String,
 

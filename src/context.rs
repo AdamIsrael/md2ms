@@ -10,9 +10,15 @@ use yaml_front_matter::Document;
 /// The context for a manuscript
 // #[derive(Copy, Debug)]
 pub struct Context {
+    /// Whether the manuscript should be anonymous or identifying
+    pub anonymous: bool,
+
     pub basedir: String,
 
     pub files: HashMap<String, Document<Metadata>>,
+
+    /// The font to use for the docx
+    pub font: String,
 
     /// The font size to use for the docx
     pub font_size: usize,
@@ -22,8 +28,10 @@ impl Context {
     pub fn new(args: &Args) -> Self {
         let basedir = args.filename_or_path.clone();
         let mut s = Self {
+            anonymous: args.anonymous.unwrap_or(false),
             basedir: basedir.clone(),
             files: HashMap::new(),
+            font: args.font.clone().unwrap_or("Times New Roman".to_string()),
             // For whatever reason, we have to double the font size to get the right size in the docx
             font_size: args.font_size.unwrap_or(24),
         };

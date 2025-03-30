@@ -1,8 +1,127 @@
 // use std::collections::HashMap;
 
+use crate::cmark::parse_paragraph;
+use crate::context::Context;
 use crate::metadata::Metadata;
+
+use docx_rs::*;
 use regex::Regex;
 use yaml_front_matter::{Document, YamlFrontMatter};
+
+/// Convert the content of a Markdown into a collection of paragraphs.
+fn content_to_paragraphs(ctx: &Context, content: String) -> Vec<Paragraph> {
+    let mut paragraphs: Vec<Paragraph> = vec![];
+    let sep = Paragraph::new()
+        .add_run(Run::new().add_text("#"))
+        .align(AlignmentType::Center)
+        .size(ctx.font_size)
+        .line_spacing(LineSpacing::new().after_lines(100));
+
+    if content.lines().count() > 0 {
+        content.lines().for_each(|line| {
+            if !line.is_empty() {
+                // need an "is separator function"
+                if line.trim() == "#" {
+                    paragraphs.push(sep.clone());
+                } else {
+                    // Parse the paragraph into runs, which will handle simple formatting.
+                    let runs = parse_paragraph(&ctx, line);
+
+                    let mut p = Paragraph::new()
+                        .line_spacing(
+                            LineSpacing::new()
+                                // https://stackoverflow.com/questions/19719668/how-is-line-spacing-measured-in-ooxml
+                                .line_rule(LineSpacingType::Auto)
+                                .line(480), // double spaced
+                        )
+                        // Indent the first line: one half-inch
+                        // FIX: The indent is a little bigger than Shunn recommends (one half-inch)
+                        // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
+                        // 1.48cm == 0.5826772 inches == 839.05 dxa
+                        .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None);
+                    for run in runs {
+                        p = p.add_run(run);
+                    }
+                    paragraphs.push(p);
+                }
+            }
+        });
+    }
+    paragraphs
+}
+
+// I think this needs to be refactored to return a collection of Paragraphs, so that we can insert things like chapter titles
+// and the like between them. Kinda ugh, but that'll also fix how to center the scene breaks.
+pub fn flatten_markdown(
+    ctx: &mut Context,
+    document: Document<Metadata>,
+) -> Result<Vec<Paragraph>, &'static str> {
+    let mut paragraphs: Vec<Paragraph> = vec![];
+    let mut sep = Paragraph::new();
+
+    // TODO: support variable font sizes (typically 10/12pt.
+    // If the metadata doesn't include an include stanza, there's nothing to flatten; it's a standalone document.
+    if document.metadata.include.is_none() {
+        println!("No include in metadata");
+        return Ok(content_to_paragraphs(&ctx, document.content));
+    }
+
+    for file in document.metadata.include.clone().unwrap() {
+        // TODO: need the folders where we might want to show the chapter or act numbers.
+        // I've added a per-folder metadata file, but need to handle it.
+        // let markdown = ctx.get_file_metadata(file.clone());
+        // println!("Markdown for {}: {:?}", file, markdown);
+
+        if let Some(md) = ctx.get_file(file) {
+            // is this still needed?
+            if !sep.raw_text().is_empty() {
+                paragraphs.push(sep.clone());
+            }
+
+            // If there is a heading in the metadata, add it here.
+            if let Some(heading) = md.metadata.heading.clone() {
+                // TODO: Add page break before the heading
+                // Center heading on page?
+                // TODO: Only page break/center if it's a new section. A new chapter,
+                // for example, should start at the top of a new page
+                paragraphs.push(
+                    Paragraph::new()
+                        .add_run(Run::new().add_text("").size(ctx.font_size))
+                        .align(AlignmentType::Center)
+                        .page_break_before(true)
+                        .line_spacing(LineSpacing::new().after_lines(100)),
+                );
+
+                for _ in 0..23 {
+                    paragraphs.push(Paragraph::new());
+                }
+                paragraphs.push(
+                    Paragraph::new()
+                        .add_run(Run::new().add_text(heading).size(ctx.font_size))
+                        .align(AlignmentType::Center)
+                        .line_spacing(LineSpacing::new().after_lines(100)),
+                );
+            }
+
+            let mut p = content_to_paragraphs(&ctx, md.content);
+            if !p.is_empty() {
+                paragraphs.append(&mut p);
+
+                sep = Paragraph::new()
+                    .add_run(Run::new().add_text("#"))
+                    .align(AlignmentType::Center)
+                    .size(ctx.font_size)
+                    .line_spacing(LineSpacing::new().after_lines(100));
+            }
+        } else {
+            // TODO: Handle this better. Return an Err maybe?
+            // If a file is noted to be included, but we can't find it, that's a problem.
+            // println!("Failed to get file: {}", file);
+        }
+    }
+
+    Ok(paragraphs)
+}
 
 /// Parse the markdown document
 pub fn parse_markdown(md: String) -> Result<Document<Metadata>, &'static str> {
