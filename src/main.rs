@@ -38,10 +38,25 @@ fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
     if content.lines().count() > 0 {
         content.lines().for_each(|line| {
             if line.len() > 0 {
+                // TODO: implement some parsers in `winnow` for things like emdashes, endashes, and ellipses
+                // and italics and bold text.
+
                 // need an "is separator function"
                 if line.trim() == "#" {
                     paragraphs.push(sep.clone());
                 } else {
+                    // TODO: I need to get even more granular here. I need to split the line into runs, so I can apply
+                    // bold and italics.
+                    // _italics_ ->
+                    // *italics* ->
+
+                    // __bold__ ->
+                    // **bold** ->
+                    //
+                    // ***bold and italics*** ->
+                    // ___bold and italics___ ->
+                    // **_bold and italics_** ->
+                    // __*bold and italics*__ ->
                     paragraphs.push(
                         Paragraph::new()
                             .add_run(Run::new().add_text(line).size(24))
