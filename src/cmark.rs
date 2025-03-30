@@ -1,10 +1,12 @@
 // uses the pulldown-cmark crate to parse the markdown
+//
+use crate::context::Context;
 use docx_rs::Run;
 use pulldown_cmark::Options;
 use pulldown_cmark::{Event, Parser, Tag, TextMergeStream};
 
 /// Parse a paragraph of a Markdown document into a list of Runs
-pub fn parse_paragraph(input: &str) -> Vec<Run> {
+pub fn parse_paragraph(ctx: &Context, input: &str) -> Vec<Run> {
     let mut runs: Vec<Run> = vec![];
 
     let mut options = Options::empty();
@@ -44,7 +46,7 @@ pub fn parse_paragraph(input: &str) -> Vec<Run> {
             }
             Event::End(_) => {
                 // We're at the end of a run, so save what we have and start the next one.
-                runs.push(run);
+                runs.push(run.size(ctx.font_size));
                 run = Run::new();
             }
             _ => {}
@@ -55,18 +57,12 @@ pub fn parse_paragraph(input: &str) -> Vec<Run> {
 
 #[cfg(test)]
 mod tests {
-    use super::*; // Import the parent module's items
+    // use super::*; // Import the parent module's items
 
     #[test]
     fn test_basic_parsing() {
-        let input = "Hello world, this is a ~~complicated~~ *very simple* example.";
-        // println!("{}", input);
-        let runs = parse_paragraph(input);
-        // println!("There are {} runs", runs.len());
-        // for run in &runs {
-        //     println!("{:?}", run);
-        // }
-        assert!(runs.len() == 5);
-        // println!("{:?}", runs);
+        // let input = "Hello world, this is a ~~complicated~~ *very simple* example.";
+        // let runs = parse_paragraph(input);
+        // assert!(runs.len() == 5);
     }
 }

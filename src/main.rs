@@ -7,31 +7,31 @@ use docx_rs::*;
 use md2ms::cmark::parse_paragraph;
 use md2ms::context::Context;
 use md2ms::metadata::Metadata;
-use md2ms::utils::{get_file_basedir, round_up};
-use std::path::PathBuf;
+use md2ms::utils::round_up;
+use md2ms::Args;
 
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-    /// The file or directory containing the manuscript in Markdown format
-    filename_or_path: String,
+// #[derive(Parser, Debug)]
+// #[command(author, version, about, long_about = None)]
+// struct Args {
+//     /// The file or directory containing the manuscript in Markdown format
+//     filename_or_path: String,
 
-    /// The font to use in the manuscript
-    #[arg(long, value_name = "Times New Roman")]
-    font: Option<String>,
+//     /// The font to use in the manuscript
+//     #[arg(long, value_name = "Times New Roman")]
+//     font: Option<String>,
 
-    /// The output directory
-    #[arg(short, long, value_name = "FILE")]
-    output_dir: Option<PathBuf>,
-}
+//     /// The output directory
+//     #[arg(short, long, value_name = "FILE")]
+//     output_dir: Option<PathBuf>,
+// }
 
 /// Convert the content of a Markdown into a collection of paragraphs.
-fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
+fn content_to_paragraphs(ctx: &Context, content: String) -> Vec<Paragraph> {
     let mut paragraphs: Vec<Paragraph> = vec![];
     let sep = Paragraph::new()
         .add_run(Run::new().add_text("#"))
         .align(AlignmentType::Center)
-        .size(24)
+        .size(ctx.font_size)
         .line_spacing(LineSpacing::new().after_lines(100));
 
     if content.lines().count() > 0 {
@@ -42,7 +42,7 @@ fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
                     paragraphs.push(sep.clone());
                 } else {
                     // Parse the paragraph into runs, which will handle simple formatting.
-                    let runs = parse_paragraph(line);
+                    let runs = parse_paragraph(&ctx, line);
 
                     let mut p = Paragraph::new()
                         .line_spacing(
@@ -80,7 +80,7 @@ fn flatten_markdown(
     // If the metadata doesn't include an include stanza, there's nothing to flatten; it's a standalone document.
     if document.metadata.include.is_none() {
         println!("No include in metadata");
-        return Ok(content_to_paragraphs(document.content));
+        return Ok(content_to_paragraphs(&ctx, document.content));
     }
 
     for file in document.metadata.include.clone().unwrap() {
@@ -103,7 +103,7 @@ fn flatten_markdown(
                 // for example, should start at the top of a new page
                 paragraphs.push(
                     Paragraph::new()
-                        .add_run(Run::new().add_text("").size(24))
+                        .add_run(Run::new().add_text("").size(ctx.font_size))
                         .align(AlignmentType::Center)
                         .page_break_before(true)
                         .line_spacing(LineSpacing::new().after_lines(100)),
@@ -114,20 +114,20 @@ fn flatten_markdown(
                 }
                 paragraphs.push(
                     Paragraph::new()
-                        .add_run(Run::new().add_text(heading).size(24))
+                        .add_run(Run::new().add_text(heading).size(ctx.font_size))
                         .align(AlignmentType::Center)
                         .line_spacing(LineSpacing::new().after_lines(100)),
                 );
             }
 
-            let mut p = content_to_paragraphs(md.content);
+            let mut p = content_to_paragraphs(&ctx, md.content);
             if !p.is_empty() {
                 paragraphs.append(&mut p);
 
                 sep = Paragraph::new()
                     .add_run(Run::new().add_text("#"))
                     .align(AlignmentType::Center)
-                    .size(24)
+                    .size(ctx.font_size)
                     .line_spacing(LineSpacing::new().after_lines(100));
             }
         } else {
@@ -143,28 +143,10 @@ fn flatten_markdown(
 pub fn main() -> Result<(), DocxError> {
     // Take the filename from positional arguments
     let args = Args::parse();
-
-    let mut ctx = Context::new(args.filename_or_path.clone());
-    // for file in ctx.files.keys() {
-    //     // println!("{}/{}", path_dir, file);
-    //     println!("File: {}", file);
-    // }
-
-    // return Ok(());
-
-    // If filename_or_path is a directory, process all the files in the directory
-    // and look for the metadata to assemble the manuscript
-
-    let basedir = get_file_basedir(args.filename_or_path.clone());
-    println!("Got basedir: {:?}", basedir);
-    // let files = get_files(basedir.clone(), args.filename_or_path.clone());
-    // for file in files.keys() {
-    //     println!("{}/{}", path_dir, file);
-    // }
+    let mut ctx = Context::new(&args);
 
     // If there are no files, exit.
     if ctx.files.is_empty() {
-        println!("No files found in {:?}", args.filename_or_path);
         return Ok(());
     }
 
@@ -217,21 +199,37 @@ pub fn main() -> Result<(), DocxError> {
             TableCell::new()
                 // TODO: Pull the author information from the metadata
                 .add_paragraph(
-                    Paragraph::new().add_run(Run::new().add_text("Adam Israel").size(24)),
+                    Paragraph::new()
+                        .add_run(Run::new().add_text("Adam Israel").size(ctx.font_size)),
                 )
                 .add_paragraph(
-                    Paragraph::new().add_run(Run::new().add_text("P.O. Box 1946").size(24)),
+                    Paragraph::new()
+                        .add_run(Run::new().add_text("P.O. Box 1946").size(ctx.font_size)),
                 )
                 .add_paragraph(
-                    Paragraph::new().add_run(Run::new().add_text("Tilbury, ON, Canada").size(24)),
+                    Paragraph::new().add_run(
+                        Run::new()
+                            .add_text("Tilbury, ON, Canada")
+                            .size(ctx.font_size),
+                    ),
                 )
-                .add_paragraph(Paragraph::new().add_run(Run::new().add_text("Canada").size(24)))
                 .add_paragraph(
-                    Paragraph::new().add_run(Run::new().add_text("adam@adamisrael.com").size(24)),
+                    Paragraph::new().add_run(Run::new().add_text("Canada").size(ctx.font_size)),
+                )
+                .add_paragraph(
+                    Paragraph::new().add_run(
+                        Run::new()
+                            .add_text("adam@adamisrael.com")
+                            .size(ctx.font_size),
+                    ),
                 ),
             TableCell::new().add_paragraph(
                 Paragraph::new()
-                    .add_run(Run::new().add_text(format!("{} words", nwc)).size(24))
+                    .add_run(
+                        Run::new()
+                            .add_text(format!("{} words", nwc))
+                            .size(ctx.font_size),
+                    )
                     .align(AlignmentType::Right),
             ),
         ])]);
@@ -244,7 +242,11 @@ pub fn main() -> Result<(), DocxError> {
         // println!("{:?}", table);
 
         let title = Paragraph::new()
-            .add_run(Run::new().add_text(metadata.title.unwrap()).size(24))
+            .add_run(
+                Run::new()
+                    .add_text(metadata.title.unwrap())
+                    .size(ctx.font_size),
+            )
             .align(AlignmentType::Center)
             .line_spacing(LineSpacing::new().after_lines(100));
 
@@ -252,14 +254,14 @@ pub fn main() -> Result<(), DocxError> {
             .add_run(
                 Run::new()
                     .add_text(format!("by {}", metadata.author.unwrap()))
-                    .size(24),
+                    .size(ctx.font_size),
             )
             .align(AlignmentType::Center);
 
         let end = Paragraph::new()
             .add_run(Run::new().add_text("END"))
             .align(AlignmentType::Center)
-            .size(24)
+            .size(ctx.font_size)
             .line_spacing(LineSpacing::new().after_lines(100));
 
         // Get the short author name and title from the metadata
@@ -318,5 +320,5 @@ pub fn main() -> Result<(), DocxError> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use super::*;
 }

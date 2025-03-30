@@ -1,6 +1,7 @@
 use crate::markdown::parse_markdown;
 use crate::metadata::Metadata;
 use crate::utils::{get_base_filename, get_file_basedir, slurp};
+use crate::Args;
 
 use std::collections::HashMap;
 use std::fs::metadata;
@@ -12,13 +13,19 @@ pub struct Context {
     pub basedir: String,
 
     pub files: HashMap<String, Document<Metadata>>,
+
+    /// The font size to use for the docx
+    pub font_size: usize,
 }
 
 impl Context {
-    pub fn new(basedir: String) -> Self {
+    pub fn new(args: &Args) -> Self {
+        let basedir = args.filename_or_path.clone();
         let mut s = Self {
             basedir: basedir.clone(),
             files: HashMap::new(),
+            // For whatever reason, we have to double the font size to get the right size in the docx
+            font_size: args.font_size.unwrap_or(24),
         };
 
         s.files = s.read_files(basedir.clone());
