@@ -58,7 +58,7 @@ pub fn get_file_basedir(file: String) -> String {
             return ancestor.as_os_str().to_str().unwrap().to_string();
         }
     }
-    return "".to_string();
+    "".to_string()
 }
 
 #[cfg(test)]

@@ -38,7 +38,7 @@ pub fn parse_markdown(md: String) -> Result<Document<Metadata>, &'static str> {
     // Remove hyperlinks
     document.content = trim_links(document.content.as_str());
 
-    return Ok(document);
+    Ok(document)
 }
 
 /// Trim double-spaces from a string.

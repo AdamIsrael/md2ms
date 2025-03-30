@@ -1,7 +1,7 @@
 // uses the pulldown-cmark crate to parse the markdown
 use docx_rs::Run;
 use pulldown_cmark::Options;
-use pulldown_cmark::{Event, Parser, Tag, TagEnd, TextMergeStream};
+use pulldown_cmark::{Event, Parser, Tag, TextMergeStream};
 
 /// Parse a paragraph of a Markdown document into a list of Runs
 pub fn parse_paragraph(input: &str) -> Vec<Run> {
@@ -42,12 +42,11 @@ pub fn parse_paragraph(input: &str) -> Vec<Run> {
                 // "There’s no need to put spaces around the dash." -- Shunn
                 run = run.add_text(text.to_string());
             }
-            Event::End(name) => match name {
-                _ => {
-                    runs.push(run);
-                    run = Run::new();
-                }
-            },
+            Event::End(_) => {
+                // We're at the end of a run, so save what we have and start the next one.
+                runs.push(run);
+                run = Run::new();
+            }
             _ => {}
         }
     }

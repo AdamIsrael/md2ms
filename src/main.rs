@@ -10,8 +10,6 @@ use md2ms::metadata::Metadata;
 use md2ms::utils::{get_file_basedir, round_up};
 use std::path::PathBuf;
 
-use words_count;
-
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -38,27 +36,12 @@ fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
 
     if content.lines().count() > 0 {
         content.lines().for_each(|line| {
-            if line.len() > 0 {
-                // TODO: implement some parsers in `winnow` for things like emdashes, endashes, and ellipses
-                // and italics and bold text.
-
+            if !line.is_empty() {
                 // need an "is separator function"
                 if line.trim() == "#" {
                     paragraphs.push(sep.clone());
                 } else {
-                    // TODO: I need to get even more granular here. I need to split the line into runs, so I can apply
-                    // bold and italics.
-                    // _italics_ ->
-                    // *italics* ->
-
-                    // __bold__ ->
-                    // **bold** ->
-                    //
-                    // ***bold and italics*** ->
-                    // ___bold and italics___ ->
-                    // **_bold and italics_** ->
-                    // __*bold and italics*__ ->
-                    //
+                    // Parse the paragraph into runs, which will handle simple formatting.
                     let runs = parse_paragraph(line);
 
                     let mut p = Paragraph::new()
@@ -77,20 +60,6 @@ fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
                         p = p.add_run(run);
                     }
                     paragraphs.push(p);
-                    // paragraphs.push(
-                    //     Paragraph::new()
-                    //         .add_run(Run::new().add_text(line).size(24))
-                    //         .line_spacing(
-                    //             LineSpacing::new()
-                    //                 // https://stackoverflow.com/questions/19719668/how-is-line-spacing-measured-in-ooxml
-                    //                 .line_rule(LineSpacingType::Auto)
-                    //                 .line(480), // double spaced
-                    //         )
-                    //         // Indent the first line
-                    //         // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
-                    //         // 1.48cm == 0.5826772 inches == 839.05 dxa
-                    //         .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None),
-                    // );
                 }
             }
         });
@@ -122,12 +91,12 @@ fn flatten_markdown(
 
         if let Some(md) = ctx.get_file(file) {
             // is this still needed?
-            if sep.raw_text().len() > 0 {
+            if !sep.raw_text().is_empty() {
                 paragraphs.push(sep.clone());
             }
 
             // If there is a heading in the metadata, add it here.
-            md.metadata.heading.clone().map(|heading| {
+            if let Some(heading) = md.metadata.heading.clone() {
                 // TODO: Add page break before the heading
                 // Center heading on page?
                 // TODO: Only page break/center if it's a new section. A new chapter,
@@ -147,13 +116,12 @@ fn flatten_markdown(
                     Paragraph::new()
                         .add_run(Run::new().add_text(heading).size(24))
                         .align(AlignmentType::Center)
-                        // .page_break_before(true)
                         .line_spacing(LineSpacing::new().after_lines(100)),
                 );
-            });
+            }
 
             let mut p = content_to_paragraphs(md.content);
-            if p.len() > 0 {
+            if !p.is_empty() {
                 paragraphs.append(&mut p);
 
                 sep = Paragraph::new()
@@ -195,7 +163,7 @@ pub fn main() -> Result<(), DocxError> {
     // }
 
     // If there are no files, exit.
-    if ctx.files.len() == 0 {
+    if ctx.files.is_empty() {
         println!("No files found in {:?}", args.filename_or_path);
         return Ok(());
     }
@@ -221,11 +189,10 @@ pub fn main() -> Result<(), DocxError> {
         }
     } else {
         // use the metadata from the first file
-        println!("Found standalone file?");
-        ctx.files.values().next().map(|v| {
+        if let Some(v) = ctx.files.values().next() {
             mddoc.metadata = v.metadata.clone();
             mddoc.content = v.content.clone();
-        });
+        }
     }
 
     // Now that we have the file(s), we can join them into one document
@@ -234,8 +201,8 @@ pub fn main() -> Result<(), DocxError> {
     let metadata = mddoc.metadata.clone();
     if let Ok(md) = flatten_markdown(&mut ctx, mddoc) {
         // Using this crate for now, but maybe convert this to my own code
-        let wc = words_count::count(&md.iter().map(|p| p.raw_text()).collect::<String>());
-
+        // let wc = words_count::count(&md.iter().map(|p| p.raw_text()).collect::<String>());
+        let wc = words_count::count(md.iter().map(|p| p.raw_text()).collect::<String>());
         // Round up
         let nwc = round_up(wc.words);
         println!("Approximate Word count: {}", nwc);
