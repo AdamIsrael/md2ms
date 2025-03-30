@@ -20,6 +20,9 @@ pub fn parse_paragraph(input: &str) -> Vec<Run> {
                 match name {
                     Tag::Paragraph => {}
                     Tag::Emphasis => {
+                        // It used to be practice to UNDERLINE emphasised text, because typewriters couldn't do italics.
+                        // That's no longer the case with digital text, so we'll use italics instead.
+                        // TODO: Make this configurable?
                         runs.push(run);
                         run = Run::new().italic();
                     }
@@ -35,6 +38,8 @@ pub fn parse_paragraph(input: &str) -> Vec<Run> {
                 }
             }
             Event::Text(text) => {
+                // TODO: Might be a good place to handle emdash and endash here?
+                // "There’s no need to put spaces around the dash." -- Shunn
                 run = run.add_text(text.to_string());
             }
             Event::End(name) => match name {

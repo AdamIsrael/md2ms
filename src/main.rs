@@ -68,7 +68,8 @@ fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
                                 .line_rule(LineSpacingType::Auto)
                                 .line(480), // double spaced
                         )
-                        // Indent the first line
+                        // Indent the first line: one half-inch
+                        // FIX: The indent is a little bigger than Shunn recommends (one half-inch)
                         // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
                         // 1.48cm == 0.5826772 inches == 839.05 dxa
                         .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None);
