@@ -91,17 +91,11 @@ impl Context {
                     } else {
                         println!("Failed to parse {:?}", p);
                     }
+                } else if path.is_dir() {
+                    // Fun with recursion goes here
+                    files.extend(self.read_files(path.as_os_str().to_str().unwrap().to_string()));
                 } else {
-                    if path.is_dir() {
-                        // println!("This is a directory!");
-                        // Fun with recursion goes here
-                        files.extend(
-                            self.read_files(path.as_os_str().to_str().unwrap().to_string()),
-                        );
-                    } else {
-                        println!("Skipping {:?}", path);
-                    }
-                    // TODO: Need to handle if this is a directory, and then read the files _in_ the directory
+                    println!("Skipping {:?}", path);
                 }
             }
         }
