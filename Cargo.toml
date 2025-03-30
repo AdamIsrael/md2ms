@@ -12,3 +12,4 @@ tempfile = "3.18.0"
 words-count = "0.1.6"
 yaml-front-matter = "0.1.0"
 regex = "1.11.1"
+pulldown-cmark = { version = "0.13.0", default-features = false }

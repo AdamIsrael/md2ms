@@ -4,6 +4,7 @@ use clap::Parser;
 use yaml_front_matter::Document;
 
 use docx_rs::*;
+use md2ms::cmark::parse_paragraph;
 use md2ms::context::Context;
 use md2ms::metadata::Metadata;
 use md2ms::utils::{get_file_basedir, round_up};
@@ -57,20 +58,38 @@ fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
                     // ___bold and italics___ ->
                     // **_bold and italics_** ->
                     // __*bold and italics*__ ->
-                    paragraphs.push(
-                        Paragraph::new()
-                            .add_run(Run::new().add_text(line).size(24))
-                            .line_spacing(
-                                LineSpacing::new()
-                                    // https://stackoverflow.com/questions/19719668/how-is-line-spacing-measured-in-ooxml
-                                    .line_rule(LineSpacingType::Auto)
-                                    .line(480), // double spaced
-                            )
-                            // Indent the first line
-                            // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
-                            // 1.48cm == 0.5826772 inches == 839.05 dxa
-                            .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None),
-                    );
+                    //
+                    let runs = parse_paragraph(line);
+
+                    let mut p = Paragraph::new()
+                        .line_spacing(
+                            LineSpacing::new()
+                                // https://stackoverflow.com/questions/19719668/how-is-line-spacing-measured-in-ooxml
+                                .line_rule(LineSpacingType::Auto)
+                                .line(480), // double spaced
+                        )
+                        // Indent the first line
+                        // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
+                        // 1.48cm == 0.5826772 inches == 839.05 dxa
+                        .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None);
+                    for run in runs {
+                        p = p.add_run(run);
+                    }
+                    paragraphs.push(p);
+                    // paragraphs.push(
+                    //     Paragraph::new()
+                    //         .add_run(Run::new().add_text(line).size(24))
+                    //         .line_spacing(
+                    //             LineSpacing::new()
+                    //                 // https://stackoverflow.com/questions/19719668/how-is-line-spacing-measured-in-ooxml
+                    //                 .line_rule(LineSpacingType::Auto)
+                    //                 .line(480), // double spaced
+                    //         )
+                    //         // Indent the first line
+                    //         // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
+                    //         // 1.48cm == 0.5826772 inches == 839.05 dxa
+                    //         .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None),
+                    // );
                 }
             }
         });
