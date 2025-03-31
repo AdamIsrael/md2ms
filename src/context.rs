@@ -1,5 +1,6 @@
-use crate::markdown::parse_markdown;
+use crate::markdown::{parse_markdown, parse_pii};
 use crate::metadata::Metadata;
+use crate::pii::PII;
 use crate::utils::{get_base_filename, get_file_basedir, slurp};
 use crate::Args;
 
@@ -22,11 +23,15 @@ pub struct Context {
 
     /// The font size to use for the docx
     pub font_size: usize,
+
+    /// Personally Identifiable Information
+    pub pii: Option<Document<PII>>,
 }
 
 impl Context {
     pub fn new(args: &Args) -> Self {
         let basedir = args.filename_or_path.clone();
+
         let mut s = Self {
             anonymous: args.anonymous.unwrap_or(false),
             basedir: basedir.clone(),
@@ -34,7 +39,18 @@ impl Context {
             font: args.font.clone().unwrap_or("Times New Roman".to_string()),
             // For whatever reason, we have to double the font size to get the right size in the docx
             font_size: args.font_size.unwrap_or(24),
+            pii: None,
         };
+
+        // TODO: read/parse in the PII so that it's available via Context
+        if !s.anonymous {
+            if let Some(pii) = args.pii.clone() {
+                let pii = slurp(pii);
+                if let Ok(pii) = parse_pii(pii) {
+                    s.pii = Some(pii);
+                }
+            }
+        }
 
         s.files = s.read_files(basedir.clone());
 

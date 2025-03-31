@@ -33,10 +33,24 @@ This is a work-in-progress and is not yet ready for general use. It is being dev
 
 ### PII - Author's Personally Identifiable information
 
-Unless the `--anonymous`
+Unless the `--anonymous` flag is present, the author's PII should be included in the final manuscript. This information is provided in the front matter of a Markdown document.
+
+```bash
+md2ms --pii examples/pii.md examples/novella_with_parts
+```
+
+### Anonymous Manuscripts
+
+To strip any PII from your manuscript, use the `--anonymous` flag.
+
+```bash
+md2ms --anonymous examples/novella_with_parts
+```
+
 ### Scene Breaks
 
-There are three types of scene breaks that are auto-deteected:
+There are the supported types of scene breaks that are auto-deteected:
 - * * *
 - \#
+- #
 - Two or more blank lines

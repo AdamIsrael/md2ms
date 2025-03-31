@@ -62,6 +62,9 @@ pub fn main() -> Result<(), DocxError> {
         }
     }
 
+    // Parse the PII document
+    // let pii = parse_pii(ctx.pii);
+
     // Now that we have the file(s), we can join them into one document
 
     // Parse the Markdown
@@ -82,36 +85,93 @@ pub fn main() -> Result<(), DocxError> {
 
         // If we're not anonymous, add the author's contact information
         if !ctx.anonymous {
-            // TODO: Need to get the PII from somewhere. We have some info in metadata, but that's the byline, which
-            // could be a pseudonym specific to the story. The author's PII is different. I'm thinking a separate
-            // bit of metadata that we can use?
-            pii = pii
-                .add_paragraph(
-                    Paragraph::new()
-                        .add_run(Run::new().add_text("Adam Israel").size(ctx.font_size)),
-                )
-                .add_paragraph(
-                    Paragraph::new()
-                        .add_run(Run::new().add_text("P.O. Box 1946").size(ctx.font_size)),
-                )
-                .add_paragraph(
-                    Paragraph::new().add_run(
-                        Run::new()
-                            .add_text("Tilbury, ON, Canada")
-                            .size(ctx.font_size),
-                    ),
-                )
-                .add_paragraph(
-                    Paragraph::new().add_run(Run::new().add_text("Canada").size(ctx.font_size)),
-                )
-                .add_paragraph(
-                    Paragraph::new().add_run(
-                        Run::new()
-                            .add_text("adam@adamisrael.com")
-                            .size(ctx.font_size),
-                    ),
+            if let Some(my) = ctx.pii {
+                let mut paragraphs: Vec<Paragraph> = Vec::new();
+
+                // Add to the PII information as available
+                if let Some(legal_name) = my.metadata.legal_name {
+                    paragraphs.push(
+                        Paragraph::new()
+                            .add_run(Run::new().add_text(legal_name).size(ctx.font_size)),
+                    );
+                }
+                if let Some(address1) = my.metadata.address1 {
+                    paragraphs.push(
+                        Paragraph::new().add_run(Run::new().add_text(address1).size(ctx.font_size)),
+                    );
+                }
+                if let Some(address2) = my.metadata.address2 {
+                    paragraphs.push(
+                        Paragraph::new().add_run(Run::new().add_text(address2).size(ctx.font_size)),
+                    );
+                }
+                if let Some(city) = my.metadata.city {
+                    if let Some(state) = my.metadata.state {
+                        if let Some(postal_code) = my.metadata.postal_code {
+                            paragraphs.push(
+                                Paragraph::new().add_run(
+                                    Run::new()
+                                        .add_text(format!("{}, {}, {}", city, state, postal_code))
+                                        .size(ctx.font_size),
+                                ),
+                            );
+                        }
+                    }
+                }
+                if let Some(country) = my.metadata.country {
+                    paragraphs.push(
+                        Paragraph::new().add_run(Run::new().add_text(country).size(ctx.font_size)),
+                    );
+                }
+                if let Some(email) = my.metadata.email {
+                    paragraphs.push(
+                        Paragraph::new().add_run(Run::new().add_text(email).size(ctx.font_size)),
+                    );
+                }
+                if let Some(phone) = my.metadata.phone {
+                    paragraphs.push(
+                        Paragraph::new().add_run(Run::new().add_text(phone).size(ctx.font_size)),
+                    );
+                }
+                if let Some(affiliations) = my.metadata.affiliations {
+                    let affiliation = format!("Active member: {}", affiliations.join(", "));
+                    paragraphs.push(
+                        Paragraph::new()
+                            .add_run(Run::new().add_text(affiliation).size(ctx.font_size)),
+                    );
+                }
+                // Add all of the PII information to the header
+                for p in paragraphs {
+                    pii = pii.add_paragraph(p);
+                }
+                // pii = pii
+                //     .add_paragraph(
+                //         Paragraph::new()
+                //             .add_run(Run::new().add_text(legal_name).size(ctx.font_size)),
+                //     )
+                //     .add_paragraph(
+                //         Paragraph::new().add_run(Run::new().add_text(address1).size(ctx.font_size)),
+                //     )
+                //     .add_paragraph(
+                //         Paragraph::new().add_run(
+                //             Run::new()
+                //                 .add_text(format!("{}, {}, {}", city, state, postal_code))
+                //                 .size(ctx.font_size),
+                //         ),
+                //     )
+                //     .add_paragraph(
+                //         Paragraph::new().add_run(Run::new().add_text(country).size(ctx.font_size)),
+                //     )
+                //     .add_paragraph(
+                //         Paragraph::new().add_run(Run::new().add_text(email).size(ctx.font_size)),
+                //     );
+            } else {
+                pii = pii.add_paragraph(
+                    Paragraph::new().add_run(Run::new().add_text("No PII supplied.")),
                 );
+            }
         }
+
         let mut table = Table::new(vec![TableRow::new(vec![
             pii,
             // Don't add if anonymous is true

@@ -2,6 +2,7 @@ pub mod cmark;
 pub mod context;
 pub mod markdown;
 pub mod metadata;
+pub mod pii;
 pub mod utils;
 
 use clap::{ArgAction, Parser};
@@ -28,4 +29,9 @@ pub struct Args {
     /// The output directory
     #[arg(short, long, value_name = "FILE")]
     pub output_dir: Option<PathBuf>,
+
+    /// Personally Identifying Information in Markdown format
+    /// Without this information, the manuscript will be anonymized.
+    #[arg(long, value_name = "FILENAME")]
+    pub pii: Option<String>,
 }

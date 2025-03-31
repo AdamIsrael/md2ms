@@ -3,7 +3,7 @@
 use crate::cmark::parse_paragraph;
 use crate::context::Context;
 use crate::metadata::Metadata;
-
+use crate::pii::PII;
 use docx_rs::*;
 use regex::Regex;
 use yaml_front_matter::{Document, YamlFrontMatter};
@@ -121,6 +121,32 @@ pub fn flatten_markdown(
     }
 
     Ok(paragraphs)
+}
+
+/// Parse the PII document
+pub fn parse_pii(md: String) -> Result<Document<PII>, &'static str> {
+    let mut pii = Document {
+        metadata: PII {
+            legal_name: None,
+            address1: None,
+            address2: None,
+            city: None,
+            state: None,
+            postal_code: None,
+            country: None,
+            email: None,
+            phone: None,
+            affiliations: None,
+        },
+        content: "".to_string(),
+    };
+
+    if let Ok(doc) = YamlFrontMatter::parse::<PII>(&md) {
+        pii.metadata = doc.metadata;
+        // pii.content = doc.content;
+    }
+
+    Ok(pii)
 }
 
 /// Parse the markdown document
