@@ -24,9 +24,11 @@ pub fn round_up(wc: usize) -> usize {
 /// Read in the contents of the file to a String
 pub fn slurp(filename: String) -> String {
     let mut input: io::BufReader<File> =
-        io::BufReader::new(File::open(filename).expect("didn't work"));
+        io::BufReader::new(File::open(&filename).expect("didn't work"));
     let mut md = String::new();
-    input.read_to_string(&mut md).expect("can't read string");
+    input
+        .read_to_string(&mut md)
+        .expect(format!("can't read string from file {}", &filename).as_str());
     md
 }
 
