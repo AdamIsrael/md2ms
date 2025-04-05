@@ -156,27 +156,6 @@ pub fn main() -> Result<(), DocxError> {
                 for p in paragraphs {
                     pii = pii.add_paragraph(p);
                 }
-                // pii = pii
-                //     .add_paragraph(
-                //         Paragraph::new()
-                //             .add_run(Run::new().add_text(legal_name).size(ctx.font_size)),
-                //     )
-                //     .add_paragraph(
-                //         Paragraph::new().add_run(Run::new().add_text(address1).size(ctx.font_size)),
-                //     )
-                //     .add_paragraph(
-                //         Paragraph::new().add_run(
-                //             Run::new()
-                //                 .add_text(format!("{}, {}, {}", city, state, postal_code))
-                //                 .size(ctx.font_size),
-                //         ),
-                //     )
-                //     .add_paragraph(
-                //         Paragraph::new().add_run(Run::new().add_text(country).size(ctx.font_size)),
-                //     )
-                //     .add_paragraph(
-                //         Paragraph::new().add_run(Run::new().add_text(email).size(ctx.font_size)),
-                //     );
             } else {
                 pii = pii.add_paragraph(
                     Paragraph::new().add_run(Run::new().add_text("No PII supplied.")),
@@ -246,8 +225,6 @@ pub fn main() -> Result<(), DocxError> {
                 .align(AlignmentType::Right)
                 .add_page_num(PageNum::new()),
         );
-
-        // let font = args.font.unwrap_or("Times New Roman".to_string());
 
         let mut doc = Docx::new()
             // .add_style(s)
