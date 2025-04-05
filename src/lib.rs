@@ -15,6 +15,12 @@ pub struct Args {
     #[arg(long, action=ArgAction::SetTrue)]
     pub anonymous: Option<bool>,
 
+    /// Use classic manuscript format
+    #[arg(long, action=ArgAction::SetTrue)]
+    pub classic: Option<bool>,
+
+    // #[arg(long, action=ArgAction::SetTrue)]
+    // pub modern: Option<bool>,
     /// The file or directory containing the manuscript in Markdown format
     pub filename_or_path: String,
 

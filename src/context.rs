@@ -6,6 +6,7 @@ use crate::Args;
 
 use std::collections::HashMap;
 use std::fs::metadata;
+use std::path::PathBuf;
 use yaml_front_matter::Document;
 
 /// The context for a manuscript
@@ -14,6 +15,11 @@ pub struct Context {
     /// Whether the manuscript should be anonymous or identifying
     pub anonymous: bool,
 
+    /// Whether the manuscript should be formatted in classic style
+    pub classic: bool,
+
+    /// Whether the manuscript should be formatted in modern style
+    // pub modern: bool,
     pub basedir: String,
 
     pub files: HashMap<String, Document<Metadata>>,
@@ -26,20 +32,36 @@ pub struct Context {
 
     /// Personally Identifiable Information
     pub pii: Option<Document<PII>>,
+
+    /// The folder to create the manuscript in.
+    pub output_dir: PathBuf,
 }
 
 impl Context {
     pub fn new(args: &Args) -> Self {
         let basedir = args.filename_or_path.clone();
 
+        // Every author has a different place for this. We just need a sane default
+        let default_output_dir = PathBuf::from(
+            shellexpand::tilde("~/Documents/Writing")
+                .to_string()
+                .to_owned(),
+        );
+
         let mut s = Self {
             anonymous: args.anonymous.unwrap_or(false),
             basedir: basedir.clone(),
+            classic: args.classic.unwrap_or(false),
             files: HashMap::new(),
             font: args.font.clone().unwrap_or("Times New Roman".to_string()),
             // For whatever reason, we have to double the font size to get the right size in the docx
             font_size: args.font_size.unwrap_or(24),
+            // modern: args.modern.unwrap_or(true),
             pii: None,
+            output_dir: args
+                .output_dir
+                .clone()
+                .unwrap_or(default_output_dir.clone()),
         };
 
         // TODO: read/parse in the PII so that it's available via Context
@@ -117,6 +139,7 @@ impl Context {
                                 self.basedir.clone(),
                                 path.as_os_str().to_str().unwrap().to_string(),
                             ),
+                            // .to_lowercase(),
                             md,
                         );
                     } else {

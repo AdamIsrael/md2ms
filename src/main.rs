@@ -49,6 +49,7 @@ pub fn main() -> Result<(), DocxError> {
     };
 
     // Check for the presence of base metadata.md
+    // TODO: Case-sensitivity? It might be Metadata.md
     if ctx.files.contains_key("metadata.md") {
         println!("Got metadata!");
         if let Some(metadata) = ctx.files.get("metadata.md") {
@@ -77,7 +78,18 @@ pub fn main() -> Result<(), DocxError> {
         let nwc = round_up(wc.words);
         println!("Approximate Word count: {}", nwc);
 
-        let docx_file = format!("{}.docx", metadata.title.clone().unwrap());
+        // TODO: Need to support output dir here.
+        let mut docx_file = ctx.output_dir;
+
+        // Create the directory, if it doesn't exist
+        if let Ok(_) = std::fs::create_dir_all(docx_file.clone()) {
+            docx_file.push(format!("{}.docx", metadata.title.clone().unwrap()));
+            println!("Full path to output file: {:?}", docx_file);
+        } else {
+            // Abort if we can't create the directory
+            return Err("adsf".to_string().into());
+        }
+
         let path = std::path::Path::new(&docx_file);
         let file = std::fs::File::create(path).unwrap();
 
