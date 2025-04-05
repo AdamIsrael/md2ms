@@ -2,6 +2,11 @@
 name = "md2ms"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "A tool for converting Markdown files to Microsoft Word documents."
+homepage = "https://github.com/adamisrael/md2ms"
+repository = "https://github.com/adamisrael/md2ms"
+readme = "README.md"
 
 [dependencies]
 # Need to use the git version of docx-rs to enable inserting page numbers into the header

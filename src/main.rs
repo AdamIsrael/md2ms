@@ -87,7 +87,7 @@ pub fn main() -> Result<(), DocxError> {
             println!("Full path to output file: {:?}", docx_file);
         } else {
             // Abort if we can't create the directory
-            return Err("adsf".to_string().into());
+            return Err(DocxError::Unknown);
         }
 
         let path = std::path::Path::new(&docx_file);
