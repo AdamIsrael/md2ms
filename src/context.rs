@@ -5,7 +5,7 @@ use crate::utils::{get_base_filename, get_file_basedir, slurp};
 use crate::Args;
 
 use std::collections::HashMap;
-use std::fs::metadata;
+use std::fs::{metadata, FileType};
 use std::path::PathBuf;
 use yaml_front_matter::Document;
 
@@ -120,7 +120,7 @@ impl Context {
         let mut files: HashMap<String, Document<Metadata>> = HashMap::new();
 
         let md = metadata(&path).unwrap();
-        if md.is_file() {
+        if md.is_file() && path.ends_with(".md") {
             let md = slurp(path.clone());
             if let Ok(md) = parse_markdown(md) {
                 files.insert(get_base_filename(self.basedir.clone(), path), md);
@@ -129,7 +129,7 @@ impl Context {
             for entry in std::fs::read_dir(path).unwrap() {
                 let entry = entry.unwrap();
                 let path = entry.path();
-                if path.is_file() {
+                if path.is_file() && path.ends_with(".md") {
                     let p = path.as_os_str().to_str().unwrap().to_string();
                     let md = slurp(p.clone());
                     if let Ok(md) = parse_markdown(md) {
