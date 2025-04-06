@@ -2,11 +2,11 @@ use crate::markdown::{parse_markdown, parse_pii};
 use crate::metadata::Metadata;
 use crate::pii::PII;
 use crate::utils::{get_base_filename, get_file_basedir, slurp};
-use crate::Args;
+use crate::CompileArgs;
 
 use std::collections::HashMap;
-use std::fs::{metadata, FileType};
-use std::path::PathBuf;
+use std::fs::metadata;
+use std::path::{Path, PathBuf};
 use yaml_front_matter::Document;
 
 /// The context for a manuscript
@@ -38,7 +38,7 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn new(args: &Args) -> Self {
+    pub fn new(args: &CompileArgs) -> Self {
         let basedir = args.filename_or_path.clone();
 
         // Every author has a different place for this. We just need a sane default
@@ -116,40 +116,54 @@ impl Context {
         }
     }
 
+    /// Determine if the file is Markdown, based on extension.
+    fn is_markdown(&mut self, path: &String) -> bool {
+        let mut markdown = false;
+        if let Some(extension) = Path::new(path.as_str()).extension() {
+            if extension == "md" {
+                markdown = true;
+            }
+        }
+        markdown
+    }
+
     fn read_files(&mut self, path: String) -> HashMap<String, Document<Metadata>> {
         let mut files: HashMap<String, Document<Metadata>> = HashMap::new();
 
         let md = metadata(&path).unwrap();
-        if md.is_file() && path.ends_with(".md") {
-            let md = slurp(path.clone());
-            if let Ok(md) = parse_markdown(md) {
-                files.insert(get_base_filename(self.basedir.clone(), path), md);
+        if md.is_file() {
+            if self.is_markdown(&path) {
+                let md = slurp(path.clone());
+                if let Ok(md) = parse_markdown(md) {
+                    files.insert(get_base_filename(self.basedir.clone(), path), md);
+                }
             }
         } else {
-            for entry in std::fs::read_dir(path).unwrap() {
+            for entry in std::fs::read_dir(&path).unwrap() {
                 let entry = entry.unwrap();
                 let path = entry.path();
-                if path.is_file() && path.ends_with(".md") {
-                    let p = path.as_os_str().to_str().unwrap().to_string();
-                    let md = slurp(p.clone());
-                    if let Ok(md) = parse_markdown(md) {
-                        // TODO: need to make sure get_base_filename returns the path, i.e. Act 1/Chapter 1/scene1.md
-                        files.insert(
-                            get_base_filename(
-                                self.basedir.clone(),
-                                path.as_os_str().to_str().unwrap().to_string(),
-                            ),
-                            // .to_lowercase(),
-                            md,
-                        );
-                    } else {
-                        println!("Failed to parse {:?}", p);
+                let spath = path.as_os_str().to_str().unwrap().to_string();
+
+                if path.is_file() {
+                    if self.is_markdown(&spath) {
+                        let p = path.as_os_str().to_str().unwrap().to_string();
+                        let md = slurp(p.clone());
+                        if let Ok(md) = parse_markdown(md) {
+                            // TODO: need to make sure get_base_filename returns the path, i.e. Act 1/Chapter 1/scene1.md
+                            files.insert(
+                                get_base_filename(self.basedir.clone(), spath),
+                                // .to_lowercase(),
+                                md,
+                            );
+                        } else {
+                            println!("Failed to parse {:?}", p);
+                        }
                     }
                 } else if path.is_dir() {
                     // Fun with recursion goes here
-                    files.extend(self.read_files(path.as_os_str().to_str().unwrap().to_string()));
+                    files.extend(self.read_files(spath));
                 } else {
-                    println!("Skipping {:?}", path);
+                    println!("Skipping '{}'", path.display());
                 }
             }
         }
