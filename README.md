@@ -38,6 +38,18 @@ Consider the following structure:
 
 Either md2ms needs to be aware of structure, so when we run export against `Story Name` it looks in `Draft` to find the story and metadata and creates `Story Name.docx`, or we run the export command against the `Draft` directory and the `folder_name` variable is set to `Draft` and we create `Draft.docx`, or we explicitly use the title in the metadata to create `Story Name.docx` (which is how it currently works).
 
+The Obsidian data, in the `.obsidian` in the root of the vault, contains the JSON configuration and plugins that are installed.
+
+- Will Obsidian try or prompt to install a plugin defined in `community-plugins.json` but not present in the `plugins` folder?
+  - Otherwise we'll have to install them manually
+- Should this be it's own crate, to manipulate a vault's configuration programatically?
+
+What integration should do:
+- install plugin(s)
+- configure plugins, i.e., for Shell Commands, it should also configure the commands we want to expose
+  - but where do we get, for example, the shell command id (`7idvy2hg6m`)?
+    - Maybe we can self-generate them, as long as they're unique
+- Create the `Writing/` root folder
 
 ### Configuration Files
 
@@ -57,12 +69,37 @@ Or I can implement serde for the `Args` struct and parse and load the configurat
 
 ## Documentation
 
+### Obsidian integration
+
+There's a few paths to take. Two requires subcommands, the other an optional flag. I only plan to add support for integrating with Obsidian, but who knows what might come along. I don't want to have to break the API down the road if someone were to submit a patch for like, EverNote or something.
+
+```bash
+md2ms obsidian [--install] /path/to/vault
+md2ms obsidian --uninstall /path/to/vault
+```
+
+or
+
+```bash
+md2ms --install-obsidian /path/to/vault
+md2ms --uninstall-obsidian /path/to/vault
+```
+
+or
+
+```bash
+md2ms install obsidian
+md2ms uninstall obsidian
+```
+
+I think I've settled with the first example.
+
 ### PII - Author's Personally Identifiable information
 
 Unless the `--anonymous` flag is present, the author's PII should be included in the final manuscript. This information is provided in the front matter of a Markdown document.
 
 ```bash
-md2ms --pii examples/pii.md examples/novella_with_parts
+md2ms compile --pii examples/pii.md examples/novella_with_parts
 ```
 
 ### Anonymous Manuscripts
@@ -70,7 +107,7 @@ md2ms --pii examples/pii.md examples/novella_with_parts
 To strip any PII from your manuscript, use the `--anonymous` flag.
 
 ```bash
-md2ms --anonymous examples/novella_with_parts
+md2ms compile --anonymous examples/novella_with_parts
 ```
 
 ### Scene Breaks
