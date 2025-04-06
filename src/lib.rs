@@ -5,22 +5,36 @@ pub mod metadata;
 pub mod pii;
 pub mod utils;
 
-use clap::{ArgAction, Parser};
+use clap::{ArgAction, Parser, Subcommand};
 use std::path::PathBuf;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+#[command(propagate_version = true)]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Commands,
+}
+
+#[derive(Subcommand)]
+pub enum Commands {
+    /// Compile Markdown file(s) into Standard Manuscript Format
+    Compile(CompileArgs),
+    /// Install Obsidian integration
+    Obsidian(ObsidianArgs),
+}
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
-pub struct Args {
+pub struct CompileArgs {
     /// If set, strip any personally identifying information from the manuscript
-    #[arg(long, action=ArgAction::SetTrue)]
+    #[arg(long, action=ArgAction::SetTrue, group="manuscript")]
     pub anonymous: Option<bool>,
 
     /// Use classic manuscript format
-    #[arg(long, action=ArgAction::SetTrue)]
+    #[arg(long, action=ArgAction::SetTrue, group="manuscript")]
     pub classic: Option<bool>,
 
-    // #[arg(long, action=ArgAction::SetTrue)]
-    // pub modern: Option<bool>,
     /// The file or directory containing the manuscript in Markdown format
     pub filename_or_path: String,
 
@@ -40,4 +54,19 @@ pub struct Args {
     /// Without this information, the manuscript will be anonymized.
     #[arg(long, value_name = "FILENAME")]
     pub pii: Option<String>,
+
+    /// Display the word count and exit.
+    #[arg(long, action=ArgAction::SetTrue)]
+    pub word_count: Option<bool>,
+}
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+pub struct ObsidianArgs {
+    /// The directory containing the Obsidian vault to integrate with.
+    pub path: String,
+
+    /// Uninstall the integration with Obsidian
+    #[arg(long, action=ArgAction::SetTrue)]
+    pub uninstall: Option<bool>,
 }

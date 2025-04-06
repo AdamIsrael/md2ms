@@ -1,5 +1,5 @@
 // Syntax: md2ms [options] <file>
-// m2ms --output-dir <dir> <files>
+// md2ms --output-dir <dir> <files>
 use clap::Parser;
 use yaml_front_matter::Document;
 
@@ -8,28 +8,27 @@ use md2ms::context::Context;
 use md2ms::markdown::flatten_markdown;
 use md2ms::metadata::Metadata;
 use md2ms::utils::round_up;
-use md2ms::Args;
-
-// #[derive(Parser, Debug)]
-// #[command(author, version, about, long_about = None)]
-// struct Args {
-//     /// The file or directory containing the manuscript in Markdown format
-//     filename_or_path: String,
-
-//     /// The font to use in the manuscript
-//     #[arg(long, value_name = "Times New Roman")]
-//     font: Option<String>,
-
-//     /// The output directory
-//     #[arg(short, long, value_name = "FILE")]
-//     output_dir: Option<PathBuf>,
-// }
+use md2ms::{Cli, Commands};
 
 pub fn main() -> Result<(), DocxError> {
-    // Take the filename from positional arguments
-    let args = Args::parse();
-    let mut ctx = Context::new(&args);
+    let cli = Cli::parse();
 
+    match &cli.command {
+        Commands::Obsidian(_args) => {
+            // TODO: write code to integrate w/ Obsidian
+            // TODO: remove Obsidian integration?
+            println!("'obsidian' was used but is not implemented yet");
+        }
+        Commands::Compile(args) => {
+            let ctx = Context::new(&args);
+            return compile(ctx);
+        }
+    }
+
+    Ok(())
+}
+
+fn compile(mut ctx: Context) -> Result<(), DocxError> {
     // If there are no files, exit.
     if ctx.files.is_empty() {
         return Ok(());
@@ -51,7 +50,6 @@ pub fn main() -> Result<(), DocxError> {
     // Check for the presence of base metadata.md
     // TODO: Case-sensitivity? It might be Metadata.md
     if ctx.files.contains_key("metadata.md") {
-        println!("Got metadata!");
         if let Some(metadata) = ctx.files.get("metadata.md") {
             mddoc.metadata = metadata.metadata.clone();
         }
@@ -76,7 +74,10 @@ pub fn main() -> Result<(), DocxError> {
         let wc = words_count::count(md.iter().map(|p| p.raw_text()).collect::<String>());
         // Round up
         let nwc = round_up(wc.words);
-        println!("Approximate Word count: {}", nwc);
+        if ctx.word_count {
+            println!("Approximate Word count: {}", nwc);
+            return Ok(());
+        }
 
         // TODO: Need to support output dir here.
         let mut docx_file = ctx.output_dir;
