@@ -1,5 +1,5 @@
 // Syntax: md2ms [options] <file>
-// m2ms --output-dir <dir> <files>
+// md2ms --output-dir <dir> <files>
 use clap::Parser;
 use yaml_front_matter::Document;
 
@@ -14,24 +14,14 @@ pub fn main() -> Result<(), DocxError> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Some(Commands::Obsidian {}) => {
+        Commands::Obsidian(_args) => {
             // TODO: write code to integrate w/ Obsidian
             // TODO: remove Obsidian integration?
-            println!("'obsidian' was used");
+            println!("'obsidian' was used but is not implemented yet");
         }
-        Some(Commands::WordCount {}) => {
-            // TODO: Just get the word count and print it out?
-            // Could possibly do the same thing with the DataView plugin, but this also works.
-        }
-        Some(Commands::Compile(args)) => {
-            println!("'compile' was used w/ args: {:?}", args);
-            // Take the filename from positional arguments
-            // let args = CompileArgs::parse();
+        Commands::Compile(args) => {
             let ctx = Context::new(&args);
-            let _ = compile(ctx);
-        }
-        None => {
-            println!("Default subcommand");
+            return compile(ctx);
         }
     }
 
@@ -60,7 +50,6 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
     // Check for the presence of base metadata.md
     // TODO: Case-sensitivity? It might be Metadata.md
     if ctx.files.contains_key("metadata.md") {
-        println!("Got metadata!");
         if let Some(metadata) = ctx.files.get("metadata.md") {
             mddoc.metadata = metadata.metadata.clone();
         }
@@ -85,7 +74,10 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
         let wc = words_count::count(md.iter().map(|p| p.raw_text()).collect::<String>());
         // Round up
         let nwc = round_up(wc.words);
-        println!("Approximate Word count: {}", nwc);
+        if ctx.word_count {
+            println!("Approximate Word count: {}", nwc);
+            return Ok(());
+        }
 
         // TODO: Need to support output dir here.
         let mut docx_file = ctx.output_dir;

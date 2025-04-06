@@ -2,7 +2,7 @@ use crate::markdown::{parse_markdown, parse_pii};
 use crate::metadata::Metadata;
 use crate::pii::PII;
 use crate::utils::{get_base_filename, get_file_basedir, slurp};
-use crate::CompileArgs;
+use crate::{Cli, CompileArgs};
 
 use std::collections::HashMap;
 use std::fs::metadata;
@@ -35,6 +35,9 @@ pub struct Context {
 
     /// The folder to create the manuscript in.
     pub output_dir: PathBuf,
+
+    /// Only display the word count for the manuscript
+    pub word_count: bool,
 }
 
 impl Context {
@@ -62,6 +65,7 @@ impl Context {
                 .output_dir
                 .clone()
                 .unwrap_or(default_output_dir.clone()),
+            word_count: args.word_count.unwrap_or(false),
         };
 
         // TODO: read/parse in the PII so that it's available via Context
