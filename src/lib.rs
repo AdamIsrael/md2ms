@@ -5,12 +5,30 @@ pub mod metadata;
 pub mod pii;
 pub mod utils;
 
-use clap::{ArgAction, Parser};
+use clap::{ArgAction, Parser, Subcommand};
 use std::path::PathBuf;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+#[command(propagate_version = true)]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+pub enum Commands {
+    /// Compile Markdown file(s) into Standard Manuscript Format
+    Compile(CompileArgs),
+    /// Install Obsidian integration
+    Obsidian {},
+    /// Get the estimated word count of the Markdown file(s)
+    WordCount {},
+}
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
-pub struct Args {
+pub struct CompileArgs {
     /// If set, strip any personally identifying information from the manuscript
     #[arg(long, action=ArgAction::SetTrue)]
     pub anonymous: Option<bool>,

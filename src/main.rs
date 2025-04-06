@@ -8,28 +8,37 @@ use md2ms::context::Context;
 use md2ms::markdown::flatten_markdown;
 use md2ms::metadata::Metadata;
 use md2ms::utils::round_up;
-use md2ms::Args;
-
-// #[derive(Parser, Debug)]
-// #[command(author, version, about, long_about = None)]
-// struct Args {
-//     /// The file or directory containing the manuscript in Markdown format
-//     filename_or_path: String,
-
-//     /// The font to use in the manuscript
-//     #[arg(long, value_name = "Times New Roman")]
-//     font: Option<String>,
-
-//     /// The output directory
-//     #[arg(short, long, value_name = "FILE")]
-//     output_dir: Option<PathBuf>,
-// }
+use md2ms::{Cli, Commands};
 
 pub fn main() -> Result<(), DocxError> {
-    // Take the filename from positional arguments
-    let args = Args::parse();
-    let mut ctx = Context::new(&args);
+    let cli = Cli::parse();
 
+    match &cli.command {
+        Some(Commands::Obsidian {}) => {
+            // TODO: write code to integrate w/ Obsidian
+            // TODO: remove Obsidian integration?
+            println!("'obsidian' was used");
+        }
+        Some(Commands::WordCount {}) => {
+            // TODO: Just get the word count and print it out?
+            // Could possibly do the same thing with the DataView plugin, but this also works.
+        }
+        Some(Commands::Compile(args)) => {
+            println!("'compile' was used w/ args: {:?}", args);
+            // Take the filename from positional arguments
+            // let args = CompileArgs::parse();
+            let ctx = Context::new(&args);
+            let _ = compile(ctx);
+        }
+        None => {
+            println!("Default subcommand");
+        }
+    }
+
+    Ok(())
+}
+
+fn compile(mut ctx: Context) -> Result<(), DocxError> {
     // If there are no files, exit.
     if ctx.files.is_empty() {
         return Ok(());
