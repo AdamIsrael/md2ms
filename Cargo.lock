@@ -372,6 +372,7 @@ dependencies = [
  "pulldown-cmark",
  "regex",
  "serde",
+ "serde_json",
  "shellexpand",
  "tempfile",
  "words-count",
