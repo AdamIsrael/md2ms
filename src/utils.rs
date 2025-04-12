@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::{self, Read};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Round up to the nearest 100 or 500 (depending on length)
 /// Per Bill Shunn, round up to the nearest 100 words unless you're entering novella territory,
@@ -22,13 +22,19 @@ pub fn round_up(wc: usize) -> usize {
 }
 
 /// Read in the contents of the file to a String
-pub fn slurp(filename: String) -> String {
+// pub fn new<P: AsRef<Path>>(path: P) -> Self {
+
+pub fn slurp<P: AsRef<Path>>(filename: P) -> String {
     let mut input: io::BufReader<File> =
         io::BufReader::new(File::open(&filename).expect("didn't work"));
     let mut md = String::new();
-    input
-        .read_to_string(&mut md)
-        .expect(format!("can't read string from file {}", &filename).as_str());
+    input.read_to_string(&mut md).expect(
+        format!(
+            "can't read string from file {}",
+            filename.as_ref().to_string_lossy()
+        )
+        .as_str(),
+    );
     md
 }
 
