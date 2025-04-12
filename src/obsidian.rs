@@ -9,14 +9,14 @@
 // Creating and manipulating notes is easy. On install, we'll want to create the PII file and maybe create the
 // Writing/ folder structure.
 //
+use crate::error::ObsidianError;
+use crate::utils::slurp;
 use serde::{Deserialize, Serialize};
-// use serde_json::Result;
-use serde_json::{Result, Value};
+use serde_json;
+use serde_json::Value;
 use std::fs::{create_dir_all, remove_file, File};
 use std::io::{copy, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
-// use tempfile::Builder;
-use crate::utils::slurp;
 use std::time::UNIX_EPOCH;
 
 pub struct Obsidian {
@@ -48,7 +48,7 @@ impl ObsidianReleases {
         let mut s = Self {
             community_plugins: Vec::new(),
         };
-        s.refresh_community_plugins();
+        let _ = s.refresh_community_plugins().unwrap();
 
         s
     }
@@ -60,59 +60,68 @@ impl ObsidianReleases {
         )
     }
 
-    fn refresh_community_plugins(&mut self) {
+    /// Refresh the community plugins list
+    /// Populates the community_plugins field with the latest list of community plugins via cached file
+    /// or fetches it from the internet if the cached file is not available or outdated.
+    fn refresh_community_plugins(&mut self) -> Result<(), ObsidianError> {
         // Check a locally cached version of the file
         let config = self.get_config_path();
 
-        create_dir_all(config).unwrap();
+        if create_dir_all(config).is_err() {
+            // Bail out if we can't create the directory
+            return Err(ObsidianError::DirectoryCreationError);
+        }
 
-        let cache = PathBuf::from(
-            shellexpand::tilde("~/.md2ms/obsidian/community-plugins.json")
-                .to_string()
-                .to_owned(),
-        );
+        let cache = PathBuf::from(self.get_config_path()).join("community-plugins.json");
         if cache.exists() && cache.is_file() {
-            let file = File::open(&cache).expect("failed to open file");
-            let seconds = file
-                .metadata()
-                .unwrap()
-                .created()
-                .unwrap()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs();
+            if let Ok(file) = File::open(&cache) {
+                // Checking the age of the cached filed is kinda ugly
+                // TODO: Need to check that this works cross-platform.
+                let seconds = file
+                    .metadata()
+                    .unwrap()
+                    .created()
+                    .unwrap()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs();
 
-            let now = UNIX_EPOCH.elapsed().unwrap().as_secs();
-            let age = now - seconds;
+                let now = UNIX_EPOCH.elapsed().unwrap().as_secs();
+                let age = now - seconds;
 
-            // For now, if the file is more than an hour old, fetch it again
-            if age > 3600 {
-                let _ = remove_file(&cache);
-            } else {
-                let contents = slurp(&cache);
+                // For now, if the file is more than an hour old, fetch it again
+                if age > 3600 {
+                    let _ = remove_file(&cache);
+                } else {
+                    let contents = slurp(&cache);
 
-                let p: Vec<CommunityPlugin> = serde_json::from_str(&contents).unwrap();
-                self.community_plugins = p;
-                return;
+                    if let Ok(p) = serde_json::from_str(&contents) {
+                        self.community_plugins = p;
+                        return Ok(());
+                    } else {
+                        return Err(ObsidianError::ParseError);
+                    }
+                }
             }
         }
 
         // Fetch community plugins from GitHub
-        let resp = reqwest::blocking::get(
-            "https://raw.githubusercontent.com/obsidianmd/obsidian-releases/refs/heads/master/community-plugins.json",
-        )
-        .expect("request failed");
-        let body = resp.text().expect("body invalid");
-        let mut out = File::create(cache).expect("failed to create file");
-        copy(&mut body.as_bytes(), &mut out).expect("failed to copy content");
+        if let Ok(resp) = reqwest::blocking::get("https://raw.githubusercontent.com/obsidianmd/obsidian-releases/refs/heads/master/community-plugins.json") {
+            if let Ok(body) = resp.text() {
+                if let Ok(mut out) = File::create(cache) {
+                    if let Ok(_) = copy(&mut body.as_bytes(), &mut out) {
+                        // Parse the JSON response
+                        let p: Vec<CommunityPlugin> = serde_json::from_str(&body).unwrap();
 
-        // println!("Body: {}", body);
+                        // Update the community_plugins field
+                        self.community_plugins = p;
+                        return Ok(());
+                    }
+                }
+            }
+        }
 
-        // Parse the JSON response
-        let p: Vec<CommunityPlugin> = serde_json::from_str(&body).unwrap();
-
-        // Update the community_plugins field
-        self.community_plugins = p;
+        Err(ObsidianError::OtherError)
     }
 }
 
@@ -154,7 +163,7 @@ impl Obsidian {
         true
     }
 
-    pub fn get_community_plugins(&self) -> Result<Vec<serde_json::Value>> {
+    pub fn get_community_plugins(&self) -> serde_json::Result<Vec<serde_json::Value>> {
         let file = self.config_path.join("community-plugins.json");
         if file.exists() {
             let content = std::fs::read_to_string(file).expect("Couldn't parse JSON");
@@ -203,7 +212,7 @@ impl Obsidian {
             // let _ = remove_dir_all(plugin_path);
 
             let path = self.config_path.join("community-plugins.json");
-            if plugins.len() == 0 {
+            if plugins.is_empty() {
                 let _ = remove_file(path);
                 return true;
             } else {

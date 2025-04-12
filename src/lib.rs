@@ -1,5 +1,6 @@
 pub mod cmark;
 pub mod context;
+pub mod error;
 pub mod markdown;
 pub mod metadata;
 pub mod obsidian;

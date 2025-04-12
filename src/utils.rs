@@ -22,19 +22,16 @@ pub fn round_up(wc: usize) -> usize {
 }
 
 /// Read in the contents of the file to a String
-// pub fn new<P: AsRef<Path>>(path: P) -> Self {
-
 pub fn slurp<P: AsRef<Path>>(filename: P) -> String {
     let mut input: io::BufReader<File> =
         io::BufReader::new(File::open(&filename).expect("didn't work"));
     let mut md = String::new();
-    input.read_to_string(&mut md).expect(
-        format!(
+    input.read_to_string(&mut md).unwrap_or_else(|_| {
+        panic!(
             "can't read string from file {}",
             filename.as_ref().to_string_lossy()
         )
-        .as_str(),
-    );
+    });
     md
 }
 

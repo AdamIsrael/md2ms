@@ -20,7 +20,7 @@ pub fn main() -> Result<(), DocxError> {
             println!("'obsidian' was used but is not implemented yet");
         }
         Commands::Compile(args) => {
-            let ctx = Context::new(&args);
+            let ctx = Context::new(args);
             return compile(ctx);
         }
     }
@@ -83,7 +83,7 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
         let mut docx_file = ctx.output_dir;
 
         // Create the directory, if it doesn't exist
-        if let Ok(_) = std::fs::create_dir_all(docx_file.clone()) {
+        if std::fs::create_dir_all(docx_file.clone()).is_ok() {
             docx_file.push(format!("{}.docx", metadata.title.clone().unwrap()));
             println!("Full path to output file: {:?}", docx_file);
         } else {
