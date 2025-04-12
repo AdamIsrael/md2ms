@@ -2,7 +2,7 @@ use crate::markdown::{parse_markdown, parse_pii};
 use crate::metadata::Metadata;
 use crate::pii::PII;
 use crate::utils::{get_base_filename, get_file_basedir, slurp};
-use crate::{Cli, CompileArgs};
+use crate::CompileArgs;
 
 use std::collections::HashMap;
 use std::fs::metadata;
@@ -121,9 +121,9 @@ impl Context {
     }
 
     /// Determine if the file is Markdown, based on extension.
-    fn is_markdown(&mut self, path: &String) -> bool {
+    fn is_markdown(&mut self, path: &str) -> bool {
         let mut markdown = false;
-        if let Some(extension) = Path::new(path.as_str()).extension() {
+        if let Some(extension) = Path::new(path).extension() {
             if extension == "md" {
                 markdown = true;
             }

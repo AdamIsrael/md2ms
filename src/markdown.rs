@@ -25,7 +25,7 @@ fn content_to_paragraphs(ctx: &Context, content: String) -> Vec<Paragraph> {
                     paragraphs.push(sep.clone());
                 } else {
                     // Parse the paragraph into runs, which will handle simple formatting.
-                    let runs = parse_paragraph(&ctx, line);
+                    let runs = parse_paragraph(ctx, line);
 
                     let mut p = Paragraph::new()
                         .line_spacing(
@@ -63,7 +63,7 @@ pub fn flatten_markdown(
     // If the metadata doesn't include an include stanza, there's nothing to flatten; it's a standalone document.
     if document.metadata.include.is_none() {
         println!("No include in metadata");
-        return Ok(content_to_paragraphs(&ctx, document.content));
+        return Ok(content_to_paragraphs(ctx, document.content));
     }
 
     for file in document.metadata.include.clone().unwrap() {
@@ -103,7 +103,7 @@ pub fn flatten_markdown(
                 );
             }
 
-            let mut p = content_to_paragraphs(&ctx, md.content);
+            let mut p = content_to_paragraphs(ctx, md.content);
             if !p.is_empty() {
                 paragraphs.append(&mut p);
 

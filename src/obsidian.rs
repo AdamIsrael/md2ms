@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_json::Value;
 use std::fs::{create_dir_all, remove_file, File};
-use std::io::{copy, BufReader, BufWriter, Write};
+use std::io::{copy, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
@@ -43,12 +43,18 @@ pub struct ObsidianReleases {
     pub community_plugins: Vec<CommunityPlugin>,
 }
 
+impl Default for ObsidianReleases {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ObsidianReleases {
     pub fn new() -> Self {
         let mut s = Self {
             community_plugins: Vec::new(),
         };
-        let _ = s.refresh_community_plugins().unwrap();
+        s.refresh_community_plugins().unwrap();
 
         s
     }
@@ -72,7 +78,7 @@ impl ObsidianReleases {
             return Err(ObsidianError::DirectoryCreationError);
         }
 
-        let cache = PathBuf::from(self.get_config_path()).join("community-plugins.json");
+        let cache = self.get_config_path().join("community-plugins.json");
         if cache.exists() && cache.is_file() {
             if let Ok(file) = File::open(&cache) {
                 // Checking the age of the cached filed is kinda ugly
@@ -109,7 +115,7 @@ impl ObsidianReleases {
         if let Ok(resp) = reqwest::blocking::get("https://raw.githubusercontent.com/obsidianmd/obsidian-releases/refs/heads/master/community-plugins.json") {
             if let Ok(body) = resp.text() {
                 if let Ok(mut out) = File::create(cache) {
-                    if let Ok(_) = copy(&mut body.as_bytes(), &mut out) {
+                    if copy(&mut body.as_bytes(), &mut out).is_ok() {
                         // Parse the JSON response
                         let p: Vec<CommunityPlugin> = serde_json::from_str(&body).unwrap();
 
