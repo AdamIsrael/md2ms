@@ -227,7 +227,7 @@ mod tests {
     #[test]
     fn test_trim_links() {
         let s = "This is a test. [This is a link](https://example.com). This is only a test.\nIf this were an actual emergency, you would be instructed where to go and what to do.";
-        println!("{}", trim_links(s));
+        // println!("{}", trim_links(s));
         assert!(trim_links(s) == "This is a test. This is a link. This is only a test.\nIf this were an actual emergency, you would be instructed where to go and what to do.");
     }
 

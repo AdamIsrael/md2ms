@@ -10,7 +10,7 @@
 // Writing/ folder structure.
 //
 use crate::error::ObsidianError;
-use crate::utils::slurp;
+use crate::utils::{file_exists, slurp, slurp_url};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_json::Value;
@@ -22,6 +22,29 @@ use std::time::UNIX_EPOCH;
 pub struct Obsidian {
     pub vault_path: PathBuf,
     pub config_path: PathBuf,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PluginManifest {
+    id: String,
+    name: String,
+    version: String,
+    #[serde(alias = "minAppVersion")]
+    min_app_version: String,
+    description: String,
+    author: String,
+    #[serde(alias = "authorUrl")]
+    author_url: String,
+    #[serde(alias = "fundingUrl")]
+    funding_url: String,
+    #[serde(alias = "isDesktopOnly")]
+    is_desktop_only: bool,
+}
+
+impl PluginManifest {
+    pub fn from_manifest(manifest: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(manifest)
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -112,18 +135,16 @@ impl ObsidianReleases {
         }
 
         // Fetch community plugins from GitHub
-        if let Ok(resp) = reqwest::blocking::get("https://raw.githubusercontent.com/obsidianmd/obsidian-releases/refs/heads/master/community-plugins.json") {
-            if let Ok(body) = resp.text() {
-                if let Ok(mut out) = File::create(cache) {
-                    if copy(&mut body.as_bytes(), &mut out).is_ok() {
-                        // Parse the JSON response
-                        let p: Vec<CommunityPlugin> = serde_json::from_str(&body).unwrap();
+        let data = slurp_url("https://raw.githubusercontent.com/obsidianmd/obsidian-releases/refs/heads/master/community-plugins.json".to_string());
 
-                        // Update the community_plugins field
-                        self.community_plugins = p;
-                        return Ok(());
-                    }
-                }
+        if let Ok(mut out) = File::create(cache) {
+            if copy(&mut data.as_bytes(), &mut out).is_ok() {
+                // Parse the JSON response
+                let p: Vec<CommunityPlugin> = serde_json::from_str(&data).unwrap();
+
+                // Update the community_plugins field
+                self.community_plugins = p;
+                return Ok(());
             }
         }
 
@@ -160,53 +181,61 @@ impl Obsidian {
         self.config_path.is_dir() && self.config_path.ends_with(".obsidian")
     }
 
-    fn download_plugin(&self, plugin: String, url: String) -> bool {
-        // Download the plugin from the given URL
-        // Save it to the plugin folder
-        // extract the plugin to ~/plugins/<plugin_name>
+    fn download_plugin(&self, url: String, _path: PathBuf) -> bool {
+        // Download and parse the plugin's manifest
+        let manifest_url = url.clone() + "/manifest.json";
+        let manifest_string = slurp_url(manifest_url);
+        if let Ok(manifest) = PluginManifest::from_manifest(&manifest_string) {
+            // https://github.com/Taitava/obsidian-shellcommands/archive/refs/tags/0.23.0.tar.gz
+            let _release_url = format!("{}/archive/refs/tags/{}.tar.gz", url, manifest.version);
+
+            // Download the plugin from the given URL
+            // Save it to the plugin folder
+            // extract the plugin to ~/plugins/<plugin_name>
+        }
 
         // Return true if successful, false otherwise
         true
     }
 
     pub fn get_community_plugins(&self) -> serde_json::Result<Vec<serde_json::Value>> {
-        let file = self.config_path.join("community-plugins.json");
-        if file.exists() {
-            let content = std::fs::read_to_string(file).expect("Couldn't parse JSON");
-            let plugins: Value = serde_json::from_str(content.as_str())?;
-            println!("Plugins: {:?}", plugins);
-            return Ok(plugins.as_array().unwrap().clone());
-            // if let Ok(p) = plugins[0].as_array() {}
-            // return Ok(plugins[0].as_array().unwrap().clone());
+        let path = self.config_path.join("community-plugins.json");
+        if file_exists(&path) {
+            let contents = slurp(&path);
+            if !contents.is_empty() {
+                let json: Value = serde_json::from_str(&contents).unwrap();
+                return Ok(json.as_array().unwrap().clone());
+            }
         }
-        // Ok(vec![Value::Null])
         Ok(vec![])
     }
 
-    pub fn add_community_plugin(&mut self, plugin: String, url: String) -> bool {
+    pub fn install_community_plugin(&mut self, id: String) -> bool {
         if let Ok(mut plugins) = self.get_community_plugins() {
-            // Install the plugin
+            if let Some(plugin) = ObsidianReleases::new()
+                .community_plugins
+                .iter()
+                .find(|p| p.id == id)
+            {
+                // Install the plugin
+                // create the plugin folder, i.e., plugins/<plugin_name>
+                let path = self.config_path.join("plugins").join(&plugin.id);
+                create_dir_all(&path).unwrap();
 
-            // create the plugin folder, i.e., plugins/<plugin_name>
-            create_dir_all(self.config_path.join("plugins").join(&plugin)).unwrap();
+                let url = plugin.get_repo_url();
 
-            // query the metadata for the plugin? There may not be an API to do this. I might need
-            // to install from the plugin's GitHub repository instead. Not ideal, especially for spinning this code
-            // into a reusable crate, but workable for md2ms.
-
-            // download the plugin
-            if self.download_plugin(plugin.clone(), url) {
-                // write the json file to install (enable?) the plugin
-                let p = serde_json::to_value(plugin).unwrap();
-                plugins.push(p);
-                // write the file
-                return self.write(plugins, self.config_path.join("community-plugins.json"));
+                // download the plugin into the proper folder
+                if self.download_plugin(url, path) {
+                    plugins.push(serde_json::to_value(&plugin.id).unwrap());
+                    // write the file
+                    return self.write(plugins, self.config_path.join("community-plugins.json"));
+                }
             }
         }
         false
     }
 
-    pub fn remove_community_plugin(&mut self, plugin: String) -> bool {
+    pub fn uninstall_community_plugin(&mut self, plugin: String) -> bool {
         if let Ok(mut plugins) = self.get_community_plugins() {
             // Iterate through the plugins and remove the one that matches
             let index = plugins.iter().position(|x| *x == plugin).unwrap();
@@ -249,7 +278,7 @@ mod tests {
     #[test]
     fn test_obsidian_releases_refresh_community_plugins() {
         let mut or = ObsidianReleases::new();
-        or.refresh_community_plugins();
+        let _ = or.refresh_community_plugins();
         assert!(or.community_plugins.len() > 0);
     }
 
@@ -347,18 +376,13 @@ mod tests {
         // Add a plugin
         // I may not want to actually download it during unit tests?
         // I could maybe add a fake plugin into my git repo, though, so I can test the code.
-        obsidian.add_community_plugin(
-            "obsidian-shellcommands".to_string(),
-            // Currently part of a pull request. I'll have to update the URL once it's merged and the branch deleted.
-            "https://github.com/AdamIsrael/md2ms/raw/7a902de0a68b959e376ae15eea75010c44fe7e8f/tests/obsidian-sample-plugin-1.0.0.tar.gz"
-                .to_string(),
-        );
+        obsidian.install_community_plugin("obsidian-shellcommands".to_string());
         let plugins = obsidian.get_community_plugins();
 
         assert_eq!(plugins.unwrap().len(), 1);
 
         // Remove a plugin
-        obsidian.remove_community_plugin("obsidian-shellcommands".to_string());
+        obsidian.uninstall_community_plugin("obsidian-shellcommands".to_string());
         let plugins = obsidian.get_community_plugins();
 
         assert_eq!(plugins.unwrap().len(), 0);
@@ -385,5 +409,32 @@ mod tests {
         let obsidian = Obsidian::new(vault_path);
 
         assert!(obsidian.is_vault());
+    }
+
+    #[test]
+    fn test_plugin_manifest() {
+        let data = r#"
+            {
+           	"id": "obsidian-shellcommands",
+           	"name": "Shell commands",
+           	"version": "0.23.0",
+           	"minAppVersion": "1.4.0",
+           	"description": "You can predefine system commands that you want to run frequently, and assign hotkeys for them. For example open external applications. Automatic execution is also supported, and execution via URI links.",
+           	"author": "Jarkko Linnanvirta",
+           	"authorUrl": "https://github.com/Taitava",
+            "fundingUrl": "https://publish.obsidian.md/shellcommands/Donate",
+           	"isDesktopOnly": true
+            }"#;
+
+        let pm = PluginManifest::from_manifest(data).unwrap();
+        assert_eq!(pm.id, "obsidian-shellcommands");
+        assert_eq!(pm.name, "Shell commands");
+        assert_eq!(pm.version, "0.23.0");
+        assert_eq!(pm.min_app_version, "1.4.0");
+        assert_eq!(
+            pm.funding_url,
+            "https://publish.obsidian.md/shellcommands/Donate"
+        );
+        assert_eq!(pm.is_desktop_only, true);
     }
 }

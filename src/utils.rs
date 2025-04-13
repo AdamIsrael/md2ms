@@ -21,6 +21,12 @@ pub fn round_up(wc: usize) -> usize {
     wc
 }
 
+pub fn file_exists<P: AsRef<Path>>(filename: P) -> bool {
+    let mut path = PathBuf::new();
+    path.push(filename);
+    path.is_file()
+}
+
 /// Read in the contents of the file to a String
 pub fn slurp<P: AsRef<Path>>(filename: P) -> String {
     let mut input: io::BufReader<File> =
@@ -35,6 +41,14 @@ pub fn slurp<P: AsRef<Path>>(filename: P) -> String {
     md
 }
 
+pub fn slurp_url(url: String) -> String {
+    let mut body = String::new();
+    if let Ok(resp) = reqwest::blocking::get(url) {
+        body = resp.text().unwrap_or("".to_string())
+    }
+    body
+}
+
 /// Get the filename relative to the base directory.
 pub fn get_base_filename(basedir: String, path: String) -> String {
     // If the basedir is the same as the path, we have a standalone file and just need its name.
@@ -45,7 +59,6 @@ pub fn get_base_filename(basedir: String, path: String) -> String {
                 return file.to_str().unwrap().to_string();
             }
         }
-        println!("Returning empty");
         return "".to_string();
     }
     let relative = path
