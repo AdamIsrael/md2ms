@@ -41,14 +41,6 @@ pub fn slurp<P: AsRef<Path>>(filename: P) -> String {
     md
 }
 
-pub fn slurp_url(url: String) -> String {
-    let mut body = String::new();
-    if let Ok(resp) = reqwest::blocking::get(url) {
-        body = resp.text().unwrap_or("".to_string())
-    }
-    body
-}
-
 /// Get the filename relative to the base directory.
 pub fn get_base_filename(basedir: String, path: String) -> String {
     // If the basedir is the same as the path, we have a standalone file and just need its name.
