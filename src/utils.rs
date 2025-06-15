@@ -7,13 +7,14 @@ use std::path::{Path, PathBuf};
 /// in which case round up to the nearest 500 words.
 /// "The point of a word count is not to tell your editor the exact length of the manuscript,
 /// but approximately how much space your story will take up in the publication."
-///
-/// Consider the case of less than 100 words, maybe print out <100? In which case, I'd need to return this as a string
 pub fn round_up(wc: usize) -> usize {
     let mut wc = wc;
     if wc > 17500 {
         wc += 500;
         wc -= wc % 500;
+        return wc;
+    } else if wc <= 100 {
+        // It's a drabble, return the exact word count.
         return wc;
     }
     wc += 100;
