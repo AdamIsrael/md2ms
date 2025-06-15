@@ -10,10 +10,6 @@ use std::path::{Path, PathBuf};
 use rand::distr::{Alphanumeric, SampleString};
 
 const COMMANDS: &[&str] = &[
-    // "Export to Times New Roman",
-    // "Export to Times New Roman (Anonymous)",
-    // "Export to Courier New",
-    // "Export to Courier New (Anonymous)",
     "Export to Standard Manuscript Format (Classic)",
     "Export to Standard Manuscript Format (Modern)",
     "Word Count",
@@ -81,12 +77,11 @@ impl ObsidianShellcommands {
         // Set the command's icon
         command.icon = "lucide-book".to_string();
 
-        let mut platform_specific_commands = PlatformSpecificCommands::default();
-
         // For checking the word count, we don't need to output the manuscript or worry about PII. We just need to
         // know the path to the draft inside the vault.
-        // TODO: Change compile target to word-count?
-        platform_specific_commands.default = "md2ms compile --word-count {{folder_path:absolute}}".to_string();
+        let platform_specific_commands = PlatformSpecificCommands {
+            default: "md2ms compile --word-count {{folder_path:absolute}}".to_string(),
+        };
 
         command.platform_specific_commands = platform_specific_commands;
 
@@ -162,50 +157,50 @@ impl ObsidianShellcommands {
         command
     }
 
-    fn get_cmd_export_to_times_new_roman(&self) -> ShellCommand {
-        let mut command = self.get_cmd_export_base();
-        command.alias = "Export to Times New Roman".to_string();
+    // fn get_cmd_export_to_times_new_roman(&self) -> ShellCommand {
+    //     let mut command = self.get_cmd_export_base();
+    //     command.alias = "Export to Times New Roman".to_string();
 
-        command
-    }
+    //     command
+    // }
 
-    fn get_cmd_export_to_times_new_roman_anonymous(&self) -> ShellCommand {
-        let mut command = self.get_cmd_export_base();
-        command.alias = "Export to Times New Roman (Anonymous)".to_string();
-        command
-            .platform_specific_commands
-            .default
-            .push_str(" --anonymous");
+    // fn get_cmd_export_to_times_new_roman_anonymous(&self) -> ShellCommand {
+    //     let mut command = self.get_cmd_export_base();
+    //     command.alias = "Export to Times New Roman (Anonymous)".to_string();
+    //     command
+    //         .platform_specific_commands
+    //         .default
+    //         .push_str(" --anonymous");
 
-        command
-    }
+    //     command
+    // }
 
-    fn get_cmd_export_to_courier_new(&self) -> ShellCommand {
-        let mut command = self.get_cmd_export_base();
-        command.alias = "Export to Courier New".to_string();
-        command
-            .platform_specific_commands
-            .default
-            .push_str(" --font \"Courier New\"");
+    // fn get_cmd_export_to_courier_new(&self) -> ShellCommand {
+    //     let mut command = self.get_cmd_export_base();
+    //     command.alias = "Export to Courier New".to_string();
+    //     command
+    //         .platform_specific_commands
+    //         .default
+    //         .push_str(" --font \"Courier New\"");
 
-        command
-    }
+    //     command
+    // }
 
-    fn get_cmd_export_to_courier_new_anonymous(&self) -> ShellCommand {
-        let mut command = self.get_cmd_export_base();
-        command.alias = "Export to Courier New (Anonymous)".to_string();
-        command
-            .platform_specific_commands
-            .default
-            .push_str(" --anonymous");
+    // fn get_cmd_export_to_courier_new_anonymous(&self) -> ShellCommand {
+    //     let mut command = self.get_cmd_export_base();
+    //     command.alias = "Export to Courier New (Anonymous)".to_string();
+    //     command
+    //         .platform_specific_commands
+    //         .default
+    //         .push_str(" --anonymous");
 
-        command
-            .platform_specific_commands
-            .default
-            .push_str(" --font \"Courier New\"");
+    //     command
+    //         .platform_specific_commands
+    //         .default
+    //         .push_str(" --font \"Courier New\"");
 
-        command
-    }
+    //     command
+    // }
 
     /// Syncronize the plugin's configuration to disk
     pub fn sync(&mut self) {

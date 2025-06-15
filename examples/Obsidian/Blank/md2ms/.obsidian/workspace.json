@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Writing/Test.md",
+                "file": "Writing/PII.md",
                 "mode": "source",
-                "source": false
+                "source": true
               },
               "icon": "lucide-file",
-              "title": "Test"
+              "title": "PII"
             }
           }
         ]
@@ -169,6 +169,7 @@
   "active": "b97c1ab737f0609f",
   "lastOpenFiles": [
     "Writing/Test.md",
+    "Writing/PII.md",
     "Writing",
     "Welcome.md"
   ]

@@ -1,5 +1,7 @@
 // Syntax: md2ms [options] <file>
 // md2ms --output-dir <dir> <files>
+use md2ms::constants;
+
 use clap::Parser;
 use yaml_front_matter::Document;
 
@@ -35,14 +37,45 @@ pub fn main() -> Result<(), DocxError> {
 
         Commands::Compile(args) => {
             let ctx = Context::new(args);
-            return compile(ctx);
+
+            // TODO: We need to iterate through the combination of supported configurations in order
+            // to generate a folder of manuscripts, not just a single manuscript.
+            for font in constants::FONTS {
+
+                // Create a clone of the context that we can modify without affecting the original.
+                let mut c = ctx.clone();
+                c.font = font.to_string();
+                c.classic = false;
+                c.anonymous = false;
+                let _ = compile(&mut c);
+
+                let mut c = ctx.clone();
+                c.font = font.to_string();
+                c.classic = false;
+                c.anonymous = true;
+                let _ = compile(&mut c);
+
+                let mut c = ctx.clone();
+                c.font = font.to_string();
+                c.classic = true;
+                c.anonymous = false;
+                let _ = compile(&mut c);
+
+                let mut c = ctx.clone();
+                c.font = font.to_string();
+                c.classic = true;
+                c.anonymous = true;
+                let _ = compile(&mut c);
+
+            }
+            // return compile(ctx);
         }
     }
 
     Ok(())
 }
 
-fn compile(mut ctx: Context) -> Result<(), DocxError> {
+fn compile(ctx: &mut Context) -> Result<(), DocxError> {
     // If there are no files, exit.
     if ctx.files.is_empty() {
         return Ok(());
@@ -82,7 +115,7 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
 
     // Parse the Markdown
     let metadata = mddoc.metadata.clone();
-    if let Ok(md) = flatten_markdown(&mut ctx, mddoc) {
+    if let Ok(md) = flatten_markdown(ctx, mddoc) {
         // Using this crate for now, but maybe convert this to my own code
         // let wc = words_count::count(&md.iter().map(|p| p.raw_text()).collect::<String>());
         let wc = words_count::count(md.iter().map(|p| p.raw_text()).collect::<String>());
@@ -93,12 +126,25 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
             return Ok(());
         }
 
-        // TODO: Need to support output dir here.
-        let mut docx_file = ctx.output_dir;
+        // A PathBuf to build the path to the output file
+        let docx_file = &mut ctx.output_dir;
+
+        let mut format = String::from("Modern");
+        if ctx.classic {
+            format = String::from("Classic");
+        }
+
+        docx_file.push(format!("{}/", metadata.title.clone().unwrap()));
 
         // Create the directory, if it doesn't exist
         if std::fs::create_dir_all(docx_file.clone()).is_ok() {
-            docx_file.push(format!("{}.docx", metadata.title.clone().unwrap()));
+            // Finally, format the file name with title, format, font, and if it's anonymous or not.
+            // `Drafts/{title}/{title} - {format} - {font} ({anon}).docx`
+            if ctx.anonymous {
+                docx_file.push(format!("{} - {} - {} (Anonymous).docx", metadata.title.clone().unwrap(), format, ctx.font.clone()));
+            } else {
+                docx_file.push(format!("{} - {} - {}.docx", metadata.title.clone().unwrap(), format, ctx.font.clone()));
+            }
             println!("Full path to output file: {:?}", docx_file);
         } else {
             // Abort if we can't create the directory
@@ -112,59 +158,59 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
 
         // If we're not anonymous, add the author's contact information
         if !ctx.anonymous {
-            if let Some(my) = ctx.pii {
+            if let Some(my) = &ctx.pii {
                 let mut paragraphs: Vec<Paragraph> = Vec::new();
 
                 // Add to the PII information as available
-                if let Some(legal_name) = my.metadata.legal_name {
+                if let Some(legal_name) = my.metadata.legal_name.clone() {
                     paragraphs.push(
                         Paragraph::new()
-                            .add_run(Run::new().add_text(legal_name).size(ctx.font_size)),
+                            .add_run(Run::new().add_text(legal_name).size(constants::FONT_SIZE)),
                     );
                 }
-                if let Some(address1) = my.metadata.address1 {
+                if let Some(address1) = my.metadata.address1.clone() {
                     paragraphs.push(
-                        Paragraph::new().add_run(Run::new().add_text(address1).size(ctx.font_size)),
+                        Paragraph::new().add_run(Run::new().add_text(address1).size(constants::FONT_SIZE)),
                     );
                 }
-                if let Some(address2) = my.metadata.address2 {
+                if let Some(address2) = my.metadata.address2.clone() {
                     paragraphs.push(
-                        Paragraph::new().add_run(Run::new().add_text(address2).size(ctx.font_size)),
+                        Paragraph::new().add_run(Run::new().add_text(address2).size(constants::FONT_SIZE)),
                     );
                 }
-                if let Some(city) = my.metadata.city {
-                    if let Some(state) = my.metadata.state {
-                        if let Some(postal_code) = my.metadata.postal_code {
+                if let Some(city) = my.metadata.city.clone() {
+                    if let Some(state) = my.metadata.state.clone() {
+                        if let Some(postal_code) = my.metadata.postal_code.clone() {
                             paragraphs.push(
                                 Paragraph::new().add_run(
                                     Run::new()
                                         .add_text(format!("{}, {}, {}", city, state, postal_code))
-                                        .size(ctx.font_size),
+                                        .size(constants::FONT_SIZE),
                                 ),
                             );
                         }
                     }
                 }
-                if let Some(country) = my.metadata.country {
+                if let Some(country) = my.metadata.country.clone() {
                     paragraphs.push(
-                        Paragraph::new().add_run(Run::new().add_text(country).size(ctx.font_size)),
+                        Paragraph::new().add_run(Run::new().add_text(country).size(constants::FONT_SIZE)),
                     );
                 }
-                if let Some(email) = my.metadata.email {
+                if let Some(email) = my.metadata.email.clone() {
                     paragraphs.push(
-                        Paragraph::new().add_run(Run::new().add_text(email).size(ctx.font_size)),
+                        Paragraph::new().add_run(Run::new().add_text(email).size(constants::FONT_SIZE)),
                     );
                 }
-                if let Some(phone) = my.metadata.phone {
+                if let Some(phone) = my.metadata.phone.clone() {
                     paragraphs.push(
-                        Paragraph::new().add_run(Run::new().add_text(phone).size(ctx.font_size)),
+                        Paragraph::new().add_run(Run::new().add_text(phone).size(constants::FONT_SIZE)),
                     );
                 }
-                if let Some(affiliations) = my.metadata.affiliations {
+                if let Some(affiliations) = my.metadata.affiliations.clone() {
                     let affiliation = format!("Active member: {}", affiliations.join(", "));
                     paragraphs.push(
                         Paragraph::new()
-                            .add_run(Run::new().add_text(affiliation).size(ctx.font_size)),
+                            .add_run(Run::new().add_text(affiliation).size(constants::FONT_SIZE)),
                     );
                 }
                 // Add all of the PII information to the header
@@ -186,7 +232,7 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
                     .add_run(
                         Run::new()
                             .add_text(format!("{} words", nwc))
-                            .size(ctx.font_size),
+                            .size(constants::FONT_SIZE),
                     )
                     .align(AlignmentType::Right),
             ),
@@ -202,7 +248,7 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
             .add_run(
                 Run::new()
                     .add_text(metadata.title.unwrap())
-                    .size(ctx.font_size),
+                    .size(constants::FONT_SIZE),
             )
             .align(AlignmentType::Center)
             .line_spacing(LineSpacing::new().after_lines(100));
@@ -213,7 +259,7 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
                 .add_run(
                     Run::new()
                         .add_text(format!("by {}", metadata.author.unwrap()))
-                        .size(ctx.font_size),
+                        .size(constants::FONT_SIZE),
                 )
                 .align(AlignmentType::Center);
         }
@@ -221,7 +267,7 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
         let end = Paragraph::new()
             .add_run(Run::new().add_text("END"))
             .align(AlignmentType::Center)
-            .size(ctx.font_size)
+            .size(constants::FONT_SIZE)
             .line_spacing(LineSpacing::new().after_lines(100));
 
         let mut header_text = format!("{} / ", metadata.short_title.as_ref().unwrap());
@@ -236,7 +282,7 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
 
         let header = Header::new().add_paragraph(
             Paragraph::new()
-                .add_run(Run::new().add_text(header_text).size(ctx.font_size))
+                .add_run(Run::new().add_text(header_text).size(constants::FONT_SIZE))
                 .align(AlignmentType::Right)
                 .add_page_num(PageNum::new()),
         );
@@ -244,7 +290,7 @@ fn compile(mut ctx: Context) -> Result<(), DocxError> {
         let mut doc = Docx::new()
             // .add_style(s)
             // Add flag to set the default font? TNR is a fine default, but some markets want Courier (and I like it better)
-            .default_fonts(RunFonts::new().ascii(ctx.font))
+            .default_fonts(RunFonts::new().ascii(constants::DEFAULT_FONT))
             .header(header)
             .first_header(Header::new())
             .add_table(table)

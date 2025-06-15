@@ -46,11 +46,17 @@ md2ms compile ~/path/to/vault/Writing/Fiction/Short/Template/Draft \
 
 Then in Obsidian, I just need one `Export to manuscript` shell command.
 
+I'm partway to implementing this. I have two commands: `Export to Standard Manuscript Format (Classic)` and `Export to Standard Manuscript Format (Modern)`. That's integrated now via `md2ms obsidian ~/path/to/vault`.
+
+Now I need to refactor the `compile` subcommand to be simpler.
+
+I would like to refactor a `word-count` subcommand, but the initial attempt failed. I still need to run through the initial compile steps to get a draft of the final manuscript, minus PII and title, which will be a big lift for a slightly cleaner CLI. Backburnering this.
+
 ### Obsidian Integration
 
 Plugins needed:
-- Shell commands
-- Commander
+- ~~Shell commands~~
+- ~~Commander (cmdr)~~
 
 Need to add metadata for the output filename, maybe?
 
