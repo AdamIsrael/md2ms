@@ -38,6 +38,12 @@ pub fn main() -> Result<(), DocxError> {
         Commands::Compile(args) => {
             let ctx = Context::new(args);
 
+            if ctx.word_count {
+                // We only need to run compile once to get the word count
+                let mut c = ctx.clone();
+                let _ = compile(&mut c);
+                return Ok(());
+            }
             // TODO: We need to iterate through the combination of supported configurations in order
             // to generate a folder of manuscripts, not just a single manuscript.
             for font in constants::FONTS {
