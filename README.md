@@ -1,42 +1,39 @@
 # md2ms
 
-Convert Markdown file(s) to Shunn's [Standard Manuscript Format](https://www.shunn.net/format/story/1/) in docx format.
+`md2ms` is a command-line tool to convert Markdown file(s) to Shunn's [Standard Manuscript Format](https://www.shunn.net/format/story/1/) in `docx` format. It also provides an integration with [Obsidian](https://obsidian.md/) via the [ShellCommands](https://github.com/Taitava/obsidian-shellcommands) and [Commander](https://github.com/phibr0/obsidian-commander) plugins so that you can easily generate manuscripts or view your word count from your Obsidian vault.
 
-This is a work-in-progress and is not yet ready for general use. It is being developed for my own use, to generate manuscripts for submission to publishers based on the contents of an [Obsidian](https://obsidian.md/) vault.
+This was partially inspired by [Tobias Buckell](https://bsky.app/profile/tobiasbuckell.bsky.social)'s [usage of Obsidian](https://bsky.app/profile/tobiasbuckell.bsky.social/post/3ljobdnprxs27) to write, track and [analyze](https://bsky.app/profile/tobiasbuckell.bsky.social/post/3ljoab7k34c2a) his fiction work.
 
-## TODO
+I've been using Obsidian for a Personal Knowledge Management system, and want to use it as a cross-platform writing application, but the difficulty of generating manuscripts from Markdown files was a barrier.
 
-- Subcommands?
-  - compile
-  - Obsidian
-  - wordcount
-- Footnotes?
-- Dynamically position the title/byline in the center of the page, based on the # of lines in the header. Something like 47 lines per page, minus header lines, divided by two.
-- Ponder the idea of generating multiple manuscripts per execution, like:
-	- Classic vs. Modern Manuscript format (also add a CLI flag/config)
-	- Times New Roman and Courier
-	- Anonymous and PII
+`md2ms` is a work-in-progress but is currently in a functional state. It is an opinionated tool, based on my personal preferences, but I think it covers at least 80% of use-cases. Given the path to Markdown file(s) in an Obsidian vault, it will generate four manuscripts:
 
-### Current work (trying not to lose focus)
+- Classic Manuscript (Courier New) Format w/Personally Identifying Information (PII)
+- Classic Manuscript (Courier New) Format w/o Personally Identifying Information (PII)
+- Modern Manuscript (Times New Roman)  Format w/Personally Identifying Information (PII)
+- Modern Manuscript (Times New Roman) Format w/o Personally Identifying Information (PII)
 
-- Implementing `sync` for `ObsidianShellCommands`. `--overwrite` works but there's a logic bug when we run it for the first time.
+A vast majority of publishers prefer Standard Manuscript Format, so this quickly generates manuscripts ready for submission.
 
-Back to a design decision about export: to simplify the export process, should we export multiple files with one command?
-It would be easier than having to run multiple commands to generate the whole batch of manuscripts.
-It would also simplify the command-line arguments, because we'd automatically generate anon vs. pii, modern vs. classic, and Times New Roman vs. Courier. Kind of a big matrix of manuscripts per export, though.
+## Installation
 
-1. TNR, pii, modern
-2. TNR, pii, classic
-3. TNR, anon, modern
-4. TNR, anon, classic
-5. Courier, pii, modern
-6. Courier, pii, classic
-7. Courier, anon, modern
-8. Courier, anon, classic
+TBD
 
-So we're looking at 8 total variations of manuscript. At that point, maybe we should create a folder per story? Something like `Drafts/{title}/{title} - {anon} - {format} - {font}.docx`.
+## Usage (Obsidian)
 
-So this could be the default, using a command like this:
+To enable the integration with Obsidian, you can use the following command:
+
+```
+md2ms obsidian /path/to/obsidian/vault
+```
+
+This will download, install, and activate the two required Obsidian plugins, which will then be configured for use with `md2ms`. You can run the command multiple times to update the plugins or to reinstall missing shortcuts.
+
+**NOTE**: You will need to re-open your vault after running this command in order for the changes to take effect.
+
+In Obsidian, right-click on the folder containing your Markdown files and choose "Export to Standard Manuscript Format".
+
+## Usage (CLI)
 
 ```bash
 md2ms compile ~/path/to/vault/Writing/Fiction/Short/Template/Draft \
@@ -44,124 +41,134 @@ md2ms compile ~/path/to/vault/Writing/Fiction/Short/Template/Draft \
 --output-dir ~/path/to/Writing/Drafts
 ```
 
-Then in Obsidian, I just need one `Export to manuscript` shell command.
+## Personally Identifying Information (PII)
 
-I'm partway to implementing this. I have two commands: `Export to Standard Manuscript Format (Classic)` and `Export to Standard Manuscript Format (Modern)`. That's integrated now via `md2ms obsidian ~/path/to/vault`.
+Most manuscripts require your personal information, such as legal name, address, email address, etc. You will need to create a `PII.md` file in the root of your vault or writing folder, with the following metadata:
 
-Now I need to refactor the `compile` subcommand to be simpler.
+```yaml
+---
+legal_name: John Q. Doe
+address1: 123 Main Street
+address2: Apt. 1408
+city: Anytown
+state: IL
+country: USA
+postal_code: 55555
+phone: 1-555-867-5309
+email: john@jqpublic.com
+affiliations:
+  - SFWA
+  - HWA
+---
+```
 
-I would like to refactor a `word-count` subcommand, but the initial attempt failed. I still need to run through the initial compile steps to get a draft of the final manuscript, minus PII and title, which will be a big lift for a slightly cleaner CLI. Backburnering this.
+## Story Structure
 
-### Obsidian Integration
+`md2ms` is designed to be flexible when it comes to story structure. You could have a single Markdown document containing your entire story, a Markdown document per scene, a folder per chapter, or even a folder to separate acts in a longer work.
 
-Plugins needed:
-- ~~Shell commands~~
-- ~~Commander (cmdr)~~
+Each Markdown file should contain some metadata:
 
-Need to add metadata for the output filename, maybe?
+
+You should also create a `metadata` Markdown for the story itself, which informs `md2ms` of pertinent information when compiling the manuscript:
+
+```yaml
+---
+author: "Adam Israel"
+title: "The Great Canadian Short Story"
+short_title: "Canadian"
+short_author: "Israel"
+content_warnings:
+  - "violence"
+  - "death"
+  - "gore"
+  - "blood"
+include:
+- scene1.md
+- scene2.md
+---
+```
+
+Most of this is self-explanatory, but the `include` block is special. It lists the Markdown files that make up your manuscript. This allows you to keep research, notes, reader feedback, etc. in the same folder as your manuscript.
+
+## TODO:
+
+- Footnotes: Strip them out or format them properly?
+- Comments: Strip them out.
+- Content Warnings: Figure out how to best add a CW block to the manuscript.
+
+## Obsidian Integration Details
 
 Consider the following structure:
 
-```bash
-└── Story Name
-    ├── Draft
-    │   ├── metadata.md
-    │   ├── scene1.md
-    │   └── scene2.md
-    └── Research.md
+```
+The Great Canadian Short Story
+├── Draft
+│   ├── metadata.md
+│   ├── scene1.md
+│   └── scene2.md
+└── Research
+    └── Outline.md
 ```
 
-Either md2ms needs to be aware of structure, so when we run export against `Story Name` it looks in `Draft` to find the story and metadata and creates `Story Name.docx`, or we run the export command against the `Draft` directory and the `folder_name` variable is set to `Draft` and we create `Draft.docx`, or we explicitly use the title in the metadata to create `Story Name.docx` (which is how it currently works).
+In this contrived example, we have two scenes and metadata in the `Draft` folder. This is what `md2ms` will use when compiling the manuscript.
 
-The Obsidian data, in the `.obsidian` in the root of the vault, contains the JSON configuration and plugins that are installed.
+Here's another example, of a [three-act novella](./examples/novella_with_parts/):
 
-- Will Obsidian try or prompt to install a plugin defined in `community-plugins.json` but not present in the `plugins` folder?
-  - Otherwise we'll have to install them manually
-- Should this be it's own crate, to manipulate a vault's configuration programatically?
-
-What integration should do:
-- install plugin(s)
-- configure plugins, i.e., for Shell Commands, it should also configure the commands we want to expose
-  - but where do we get, for example, the shell command id (`7idvy2hg6m`)?
-    - Maybe we can self-generate them, as long as they're unique
-- Create the `Writing/` root folder
-
-
-I think I need to pass the _folder_ to use for the writing, defaulting to `Writing`, because I need to know where to expect the `PII.md` file, for example.
-```bash
-md2ms obsidian install --path /path/to/obsidian/vault --folder Writing
+```
+.
+├── Act 1
+│   ├── Chapter 1
+│   │   ├── [scene 1.md](./examples/novella_with_parts/Act 1/Chapter 1/scene 1.md)
+│   │   ├── scene 2.md
+│   │   └── scene 3.md
+│   ├── Chapter 2
+│   │   ├── scene 1.md
+│   │   ├── scene 2.md
+│   │   └── scene 3.md
+│   ├── Chapter 3
+│   │   ├── scene 1.md
+│   │   ├── scene 2.md
+│   │   └── scene 3.md
+│   └── [metadata.md](./examples/novella_with_parts/Act 1/metadata.md)
+├── Act 2
+│   ├── Chapter 4
+│   │   ├── scene 1.md
+│   │   ├── scene 2.md
+│   │   └── scene 3.md
+│   ├── Chapter 5
+│   │   ├── scene 1.md
+│   │   ├── scene 2.md
+│   │   └── scene 3.md
+│   ├── Chapter 6
+│   │   ├── scene 1.md
+│   │   ├── scene 2.md
+│   │   └── scene 3.md
+│   └── metadata.md
+├── Act 3
+│   ├── Chapter 7
+│   │   ├── scene 1.md
+│   │   ├── scene 2.md
+│   │   └── scene 3.md
+│   ├── Chapter 8
+│   │   ├── scene 1.md
+│   │   ├── scene 2.md
+│   │   └── scene 3.md
+│   ├── Chapter 9
+│   │   ├── scene 1.md
+│   │   ├── scene 2.md
+│   │   └── scene 3.md
+│   └── metadata.md
+├── [metadata.md](./examples/novella_with_parts/metadata.md)
+└── [PII.md](./examples/novella_with_parts/PII.md)
 ```
 
-#### Shell Commands
+## Bugs
 
-Right now I can think of five commands:
-
-- Export to Times New Roman
-- Export to Courier New
-- Export to Times New Roman (Anonymous)
-- Export to Courier New (Anonymous)
-- Word Count
-
+- Remove extra scene breaks (`#`) after the title, after a header ("Act 1"), and at the end of a chapter.
 
 ### Configuration Files
 
-I'm considering adding support for a configuration file to set defaults for the CLI. The benefits are that it could shorten the command-line arguments and allow greater/easier customization. On the flip side, this is meant to be opinionated on purpose. By default, it should generate a manuscript that is as close to Shunn's standard format as possible.
-
-I just need to think through how the configuration file should be used and if it's even necessary. I may hold off on a decision until I do some of the Obsidian integration. The only configuration option that might be useful globally or per-user is the output directory, which I haven't even wired up yet.
-
-There are at least four different crates that wrap around clap to provide configuration file support.
-
-1. [clap-serde](https://crates.io/crates/clap-serde) - over 2 years old, MIT licensed.
-2. [clap-config](https://crates.io/crates/clap_config) - 8 months old, MIT licensed. Single struct, any deserializable format.
-3. [clap-conf](https://crates.io/crates/clap_conf) - over 3 years old, MIT licensed.
-4. [clap-config-file](https://crates.io/crates/clap-config-file) - 2 months old, MIT licensed. Single struct, yaml.
-5. [confy](https://crates.io/crates/confy) - 1 year old, MIT licensed. Not clap-specific. TOML,YAML, or RON.
-
-Or I can implement serde for the `Args` struct and parse and load the configuration file myself.
-
-## Documentation
-
-### Obsidian integration
-
-There's a few paths to take. Two requires subcommands, the other an optional flag. I only plan to add support for integrating with Obsidian, but who knows what might come along. I don't want to have to break the API down the road if someone were to submit a patch for like, EverNote or something.
-
-```bash
-md2ms obsidian [--install] /path/to/vault
-md2ms obsidian --uninstall /path/to/vault
-```
-
-or
-
-```bash
-md2ms --install-obsidian /path/to/vault
-md2ms --uninstall-obsidian /path/to/vault
-```
-
-or
-
-```bash
-md2ms install obsidian
-md2ms uninstall obsidian
-```
-
-I think I've settled with the first example.
-
-### PII - Author's Personally Identifiable information
-
-Unless the `--anonymous` flag is present, the author's PII should be included in the final manuscript. This information is provided in the front matter of a Markdown document.
-
-```bash
-md2ms compile --pii examples/pii.md examples/novella_with_parts
-```
-
-### Anonymous Manuscripts
-
-To strip any PII from your manuscript, use the `--anonymous` flag.
-
-```bash
-md2ms compile --anonymous examples/novella_with_parts
-```
-
+Right now there is no configuration file for `md2ms`. All options are passed via command-line arguments.
 ### Scene Breaks
 
 There are the supported types of scene breaks that are auto-deteected:
@@ -169,7 +176,3 @@ There are the supported types of scene breaks that are auto-deteected:
 - `\#`
 - `#`
 - Two or more blank lines
-
-### Classic vs. Modern manuscript Format
-
-By default, we will generate manuscripts in Modern format. If you really want classic, you can pass the `--classic` flag.
