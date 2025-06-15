@@ -121,17 +121,13 @@ impl Context {
         );
 
         let mut s = Self {
-            // anonymous: args.anonymous.unwrap_or(false),
             anonymous: false,
             basedir: basedir.clone(),
-            // classic: args.classic.unwrap_or(false),
             classic: false,
             files: HashMap::new(),
 
             font: constants::FONTS[0].to_string(),
-            // For whatever reason, we have to double the font size to get the right size in the docx
             font_size: constants::FONT_SIZE,
-            // modern: args.modern.unwrap_or(true),
             pii: None,
             output_dir: args
                 .output_dir

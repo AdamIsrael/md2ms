@@ -48,33 +48,36 @@ pub fn main() -> Result<(), DocxError> {
             // to generate a folder of manuscripts, not just a single manuscript.
             for font in constants::FONTS {
 
-                // Create a clone of the context that we can modify without affecting the original.
-                let mut c = ctx.clone();
-                c.font = font.to_string();
-                c.classic = false;
-                c.anonymous = false;
-                let _ = compile(&mut c);
+                // For now, only generate Classic Manuscripts for Courier New, and TNR for Modern.
+                match *font {
+                    "Courier New" => {
+                        let mut c = ctx.clone();
+                        c.font = font.to_string();
+                        c.classic = true;
+                        c.anonymous = false;
+                        let _ = compile(&mut c);
 
-                let mut c = ctx.clone();
-                c.font = font.to_string();
-                c.classic = false;
-                c.anonymous = true;
-                let _ = compile(&mut c);
+                        let mut c = ctx.clone();
+                        c.font = font.to_string();
+                        c.classic = true;
+                        c.anonymous = true;
+                        let _ = compile(&mut c);
+                    }
+                    _ => {
+                        let mut c = ctx.clone();
+                        c.font = font.to_string();
+                        c.classic = false;
+                        c.anonymous = false;
+                        let _ = compile(&mut c);
 
-                let mut c = ctx.clone();
-                c.font = font.to_string();
-                c.classic = true;
-                c.anonymous = false;
-                let _ = compile(&mut c);
-
-                let mut c = ctx.clone();
-                c.font = font.to_string();
-                c.classic = true;
-                c.anonymous = true;
-                let _ = compile(&mut c);
-
+                        let mut c = ctx.clone();
+                        c.font = font.to_string();
+                        c.classic = false;
+                        c.anonymous = true;
+                        let _ = compile(&mut c);
+                    }
+                }
             }
-            // return compile(ctx);
         }
     }
 
@@ -295,7 +298,7 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
         let mut doc = Docx::new()
             // .add_style(s)
             // Add flag to set the default font? TNR is a fine default, but some markets want Courier (and I like it better)
-            .default_fonts(RunFonts::new().ascii(constants::DEFAULT_FONT))
+            .default_fonts(RunFonts::new().ascii(ctx.font.clone()))
             .header(header)
             .first_header(Header::new())
             .add_table(table)
