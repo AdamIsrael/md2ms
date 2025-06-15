@@ -4,6 +4,8 @@ pub mod error;
 pub mod markdown;
 pub mod metadata;
 pub mod obsidian;
+pub mod obsidian_shellcommands;
+pub mod obsidian_commander;
 pub mod pii;
 pub mod utils;
 
@@ -66,7 +68,20 @@ pub struct CompileArgs {
 #[command(author, version, about, long_about = None)]
 pub struct ObsidianArgs {
     /// The directory containing the Obsidian vault to integrate with.
-    pub path: String,
+    pub obsidian_path: String,
+
+    /// Manuscript export path
+    #[arg(long, default_value = "~/Writing/Drafts/")]
+    pub export_path: Option<String>,
+
+    /// The folder to use for the writing, defaulting to `Writing`
+    /// This can be a relative or absolute path, from the vault root.
+    #[arg(long, default_value = "Writing")]
+    pub vault_folder: Option<String>,
+
+    /// If set, overwrite existing shell commands.
+    #[arg(long, action=ArgAction::SetTrue)]
+    pub overwrite: Option<bool>,
 
     /// Uninstall the integration with Obsidian
     #[arg(long, action=ArgAction::SetTrue)]

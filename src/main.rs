@@ -7,6 +7,7 @@ use docx_rs::*;
 use md2ms::context::Context;
 use md2ms::markdown::flatten_markdown;
 use md2ms::metadata::Metadata;
+use md2ms::obsidian::update_obsidian_vault;
 use md2ms::utils::round_up;
 use md2ms::{Cli, Commands};
 
@@ -14,11 +15,24 @@ pub fn main() -> Result<(), DocxError> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Obsidian(_args) => {
+        Commands::Obsidian(args) => {
             // TODO: write code to integrate w/ Obsidian
             // TODO: remove Obsidian integration?
-            println!("'obsidian' was used but is not implemented yet");
+            // println!("'obsidian' was used but is not implemented yet");
+
+            if let Some(export_path) = args.export_path.clone() {
+                if let Some(vault_folder) = args.vault_folder.clone() {
+                    println!("Updating Obsidian vault...");
+                    update_obsidian_vault(
+                        &args.obsidian_path,
+                        &export_path,
+                        &vault_folder,
+                        args.overwrite.unwrap_or(false),
+                    );
+                }
+            }
         }
+
         Commands::Compile(args) => {
             let ctx = Context::new(args);
             return compile(ctx);

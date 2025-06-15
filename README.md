@@ -17,6 +17,35 @@ This is a work-in-progress and is not yet ready for general use. It is being dev
 	- Times New Roman and Courier
 	- Anonymous and PII
 
+### Current work (trying not to lose focus)
+
+- Implementing `sync` for `ObsidianShellCommands`. `--overwrite` works but there's a logic bug when we run it for the first time.
+
+Back to a design decision about export: to simplify the export process, should we export multiple files with one command?
+It would be easier than having to run multiple commands to generate the whole batch of manuscripts.
+It would also simplify the command-line arguments, because we'd automatically generate anon vs. pii, modern vs. classic, and Times New Roman vs. Courier. Kind of a big matrix of manuscripts per export, though.
+
+1. TNR, pii, modern
+2. TNR, pii, classic
+3. TNR, anon, modern
+4. TNR, anon, classic
+5. Courier, pii, modern
+6. Courier, pii, classic
+7. Courier, anon, modern
+8. Courier, anon, classic
+
+So we're looking at 8 total variations of manuscript. At that point, maybe we should create a folder per story? Something like `Drafts/{title}/{title} - {anon} - {format} - {font}.docx`.
+
+So this could be the default, using a command like this:
+
+```bash
+md2ms compile ~/path/to/vault/Writing/Fiction/Short/Template/Draft \
+--pii ~/Documents/Writing/PII.md \
+--output-dir ~/path/to/Writing/Drafts
+```
+
+Then in Obsidian, I just need one `Export to manuscript` shell command.
+
 ### Obsidian Integration
 
 Plugins needed:
@@ -50,6 +79,23 @@ What integration should do:
   - but where do we get, for example, the shell command id (`7idvy2hg6m`)?
     - Maybe we can self-generate them, as long as they're unique
 - Create the `Writing/` root folder
+
+
+I think I need to pass the _folder_ to use for the writing, defaulting to `Writing`, because I need to know where to expect the `PII.md` file, for example.
+```bash
+md2ms obsidian install --path /path/to/obsidian/vault --folder Writing
+```
+
+#### Shell Commands
+
+Right now I can think of five commands:
+
+- Export to Times New Roman
+- Export to Courier New
+- Export to Times New Roman (Anonymous)
+- Export to Courier New (Anonymous)
+- Word Count
+
 
 ### Configuration Files
 
