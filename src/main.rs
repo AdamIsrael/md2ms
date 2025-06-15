@@ -114,23 +114,22 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
         }
     }
 
-    // Parse the PII document
-    // let pii = parse_pii(ctx.pii);
-
     // Now that we have the file(s), we can join them into one document
 
     // Parse the Markdown
     let metadata = mddoc.metadata.clone();
     if let Ok(md) = flatten_markdown(ctx, mddoc) {
         // Using this crate for now, but maybe convert this to my own code
-        // let wc = words_count::count(&md.iter().map(|p| p.raw_text()).collect::<String>());
         let wc = words_count::count(md.iter().map(|p| p.raw_text()).collect::<String>());
-        // Round up
-        let nwc = round_up(wc.words);
+
+        // If the author wants the word count, give them the exact count, not the approximate value.
         if ctx.word_count {
-            println!("Approximate Word count: {}", nwc);
+            println!("Exact word count: {}", wc.words);
             return Ok(());
         }
+
+        // Round up for the manuscript
+        let nwc = round_up(wc.words);
 
         // A PathBuf to build the path to the output file
         let docx_file = &mut ctx.output_dir;
@@ -237,7 +236,7 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
                 Paragraph::new()
                     .add_run(
                         Run::new()
-                            .add_text(format!("{} words", nwc))
+                            .add_text(format!("about {} words", nwc))
                             .size(constants::FONT_SIZE),
                     )
                     .align(AlignmentType::Right),
