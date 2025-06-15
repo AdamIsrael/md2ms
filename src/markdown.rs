@@ -52,8 +52,6 @@ fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
     paragraphs
 }
 
-// I think this needs to be refactored to return a collection of Paragraphs, so that we can insert things like chapter titles
-// and the like between them. Kinda ugh, but that'll also fix how to center the scene breaks.
 pub fn flatten_markdown(
     ctx: &mut Context,
     document: Document<Metadata>,
