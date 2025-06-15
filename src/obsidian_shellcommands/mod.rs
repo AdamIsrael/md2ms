@@ -44,7 +44,8 @@ impl ObsidianShellcommands {
         // Return an error, i.e., if the path is bad.
         // Load the current configuration
         print!("Loading data...");
-        let mut root: Root = Root::default();
+        let mut root: Root = Root::new();
+
         if let Ok(r) = Root::load(&path) {
             root = r;
         }
