@@ -35,20 +35,15 @@ impl ObsidianShellcommands {
             path.push(".obsidian");
         }
         path.push("plugins/obsidian-shellcommands/data.json");
-        println!("Looking for data at {}", path.display());
 
         // Return an error, i.e., if the path is bad.
         // Load the current configuration
-        print!("Loading data...");
         let mut root: Root = Root::new();
 
         if let Ok(r) = Root::load(&path) {
             root = r;
         }
-        // let root = Root::load(path)?;
-        println!("Done.");
-        // // Sync the data with the plugin configuration
-        // self.sync(&obsidian.clone(), writing_folder, overwrite);
+
         Ok(ObsidianShellcommands {
             data: root,
             obsidian: obsidian.clone(),
@@ -112,8 +107,6 @@ impl ObsidianShellcommands {
         pii.push(self.vault_folder.clone());
         pii.push("PII.md");
 
-        // println!("PII should be at {:?}", pii);
-
         // TODO: need to figure out how to make the path to PII more generic
         // I've added Obsidian as an argument, but I'll need to extract it from the vault_path
         platform_specific_commands.default = format!(
@@ -135,20 +128,9 @@ impl ObsidianShellcommands {
         command
     }
 
-    fn get_cmd_export_to_classic(&self) -> ShellCommand {
+    fn get_cmd_export_to_standard_manuscript_format(&self) -> ShellCommand {
         let mut command = self.get_cmd_export_base();
-        command.alias = "Export to Standard Manuscript Format (Classic)".to_string();
-        command
-            .platform_specific_commands
-            .default
-            .push_str(" --classic");
-
-        command
-    }
-
-    fn get_cmd_export_to_modern(&self) -> ShellCommand {
-        let mut command = self.get_cmd_export_base();
-        command.alias = "Export to Standard Manuscript Format (Modern)".to_string();
+        command.alias = "Export to Standard Manuscript Format".to_string();
         command
             .platform_specific_commands
             .default
@@ -157,60 +139,14 @@ impl ObsidianShellcommands {
         command
     }
 
-    // fn get_cmd_export_to_times_new_roman(&self) -> ShellCommand {
-    //     let mut command = self.get_cmd_export_base();
-    //     command.alias = "Export to Times New Roman".to_string();
-
-    //     command
-    // }
-
-    // fn get_cmd_export_to_times_new_roman_anonymous(&self) -> ShellCommand {
-    //     let mut command = self.get_cmd_export_base();
-    //     command.alias = "Export to Times New Roman (Anonymous)".to_string();
-    //     command
-    //         .platform_specific_commands
-    //         .default
-    //         .push_str(" --anonymous");
-
-    //     command
-    // }
-
-    // fn get_cmd_export_to_courier_new(&self) -> ShellCommand {
-    //     let mut command = self.get_cmd_export_base();
-    //     command.alias = "Export to Courier New".to_string();
-    //     command
-    //         .platform_specific_commands
-    //         .default
-    //         .push_str(" --font \"Courier New\"");
-
-    //     command
-    // }
-
-    // fn get_cmd_export_to_courier_new_anonymous(&self) -> ShellCommand {
-    //     let mut command = self.get_cmd_export_base();
-    //     command.alias = "Export to Courier New (Anonymous)".to_string();
-    //     command
-    //         .platform_specific_commands
-    //         .default
-    //         .push_str(" --anonymous");
-
-    //     command
-    //         .platform_specific_commands
-    //         .default
-    //         .push_str(" --font \"Courier New\"");
-
-    //     command
-    // }
-
     /// Syncronize the plugin's configuration to disk
     pub fn sync(&mut self) {
         println!("Syncing shell command(s)...");
         for command in COMMANDS {
             let c = match *command {
-                "Export to Standard Manuscript Format (Classic)" => self.get_cmd_export_to_classic(),
                 "Word Count" => self.get_cmd_word_count(),
-                // The default: Modern
-                _ => self.get_cmd_export_to_modern(),
+                // The default
+                _ => self.get_cmd_export_to_standard_manuscript_format(),
             };
             self.data.shell_commands.retain(|x| !x.alias.eq(command));
             // Only append if the command is not already present
