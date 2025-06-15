@@ -1,8 +1,9 @@
+use crate::constants;
 use crate::markdown::{parse_markdown, parse_pii};
 use crate::metadata::Metadata;
 use crate::pii::PII;
 use crate::utils::{get_base_filename, get_file_basedir, slurp};
-use crate::{Cli, CompileArgs};
+use crate::CompileArgs;
 
 use std::collections::HashMap;
 use std::fs::metadata;
@@ -40,6 +41,74 @@ pub struct Context {
     pub word_count: bool,
 }
 
+impl Clone for Context {
+
+    // We can't clone Context directly because of the Document<Metadata> and Document<PII> types.
+    // This clone will clone the individual fields to give us a copy of the Context. There might
+    // be better ways/places to handle this, but this works for now.
+    fn clone(&self) -> Self {
+        let mut files: HashMap<String, Document<Metadata>> = HashMap::new();
+        for (key, value) in self.files.iter() {
+            let doc = Document {
+                metadata: Metadata {
+                    author: value.metadata.author.clone(),
+                    content_warnings: value.metadata.content_warnings.clone(),
+                    heading: value.metadata.heading.clone(),
+                    include: value.metadata.include.clone(),
+                    short_title: value.metadata.short_title.clone(),
+                    short_author: value.metadata.short_author.clone(),
+                    title: value.metadata.title.clone(),
+                },
+                content: value.content.clone(),
+            };
+            files.insert(key.clone(), doc);
+        }
+
+        // Clone the PII metadata
+        let mut pii_clone: Document<PII> = Document {
+            metadata: PII {
+                address1: Some(String::new()),
+                address2: Some(String::new()),
+                affiliations: Some(Vec::new()),
+                city: Some(String::new()),
+                country: Some(String::new()),
+                email: Some(String::new()),
+                legal_name: Some(String::new()),
+                postal_code: Some(String::new()),
+                phone: Some(String::new()),
+                state: Some(String::new()),
+            },
+            content: String::new(),
+        };
+
+        if let Some(pii) = &self.pii {
+            pii_clone.metadata.legal_name = pii.metadata.legal_name.clone();
+            pii_clone.metadata.address1 = pii.metadata.address1.clone();
+            pii_clone.metadata.address2 = pii.metadata.address2.clone();
+            pii_clone.metadata.affiliations = pii.metadata.affiliations.clone();
+            pii_clone.metadata.city = pii.metadata.city.clone();
+            pii_clone.metadata.country = pii.metadata.country.clone();
+            pii_clone.metadata.email = pii.metadata.email.clone();
+            pii_clone.metadata.legal_name = pii.metadata.legal_name.clone();
+            pii_clone.metadata.postal_code = pii.metadata.postal_code.clone();
+            pii_clone.metadata.state = pii.metadata.state.clone();
+            pii_clone.metadata.phone = pii.metadata.phone.clone();
+        }
+
+        Self {
+            anonymous: self.anonymous,
+            basedir: self.basedir.clone(),
+            classic: self.classic,
+            files,
+            font: self.font.clone(),
+            font_size: self.font_size,
+            pii: Some(pii_clone),
+            output_dir: self.output_dir.clone(),
+            word_count: self.word_count,
+        }
+    }
+}
+
 impl Context {
     pub fn new(args: &CompileArgs) -> Self {
         let basedir = args.filename_or_path.clone();
@@ -52,14 +121,13 @@ impl Context {
         );
 
         let mut s = Self {
-            anonymous: args.anonymous.unwrap_or(false),
+            anonymous: false,
             basedir: basedir.clone(),
-            classic: args.classic.unwrap_or(false),
+            classic: false,
             files: HashMap::new(),
-            font: args.font.clone().unwrap_or("Times New Roman".to_string()),
-            // For whatever reason, we have to double the font size to get the right size in the docx
-            font_size: args.font_size.unwrap_or(24),
-            // modern: args.modern.unwrap_or(true),
+
+            font: constants::FONTS[0].to_string(),
+            font_size: constants::FONT_SIZE,
             pii: None,
             output_dir: args
                 .output_dir
@@ -121,9 +189,9 @@ impl Context {
     }
 
     /// Determine if the file is Markdown, based on extension.
-    fn is_markdown(&mut self, path: &String) -> bool {
+    fn is_markdown(&mut self, path: &str) -> bool {
         let mut markdown = false;
-        if let Some(extension) = Path::new(path.as_str()).extension() {
+        if let Some(extension) = Path::new(path).extension() {
             if extension == "md" {
                 markdown = true;
             }

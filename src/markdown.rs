@@ -1,6 +1,7 @@
 // use std::collections::HashMap;
 
 use crate::cmark::parse_paragraph;
+use crate::constants;
 use crate::context::Context;
 use crate::metadata::Metadata;
 use crate::pii::PII;
@@ -8,13 +9,14 @@ use docx_rs::*;
 use regex::Regex;
 use yaml_front_matter::{Document, YamlFrontMatter};
 
+
 /// Convert the content of a Markdown into a collection of paragraphs.
-fn content_to_paragraphs(ctx: &Context, content: String) -> Vec<Paragraph> {
+fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
     let mut paragraphs: Vec<Paragraph> = vec![];
     let sep = Paragraph::new()
         .add_run(Run::new().add_text("#"))
         .align(AlignmentType::Center)
-        .size(ctx.font_size)
+        .size(constants::FONT_SIZE)
         .line_spacing(LineSpacing::new().after_lines(100));
 
     if content.lines().count() > 0 {
@@ -25,7 +27,7 @@ fn content_to_paragraphs(ctx: &Context, content: String) -> Vec<Paragraph> {
                     paragraphs.push(sep.clone());
                 } else {
                     // Parse the paragraph into runs, which will handle simple formatting.
-                    let runs = parse_paragraph(&ctx, line);
+                    let runs = parse_paragraph(line);
 
                     let mut p = Paragraph::new()
                         .line_spacing(
@@ -63,7 +65,7 @@ pub fn flatten_markdown(
     // If the metadata doesn't include an include stanza, there's nothing to flatten; it's a standalone document.
     if document.metadata.include.is_none() {
         println!("No include in metadata");
-        return Ok(content_to_paragraphs(&ctx, document.content));
+        return Ok(content_to_paragraphs(document.content));
     }
 
     for file in document.metadata.include.clone().unwrap() {
@@ -86,7 +88,7 @@ pub fn flatten_markdown(
                 // for example, should start at the top of a new page
                 paragraphs.push(
                     Paragraph::new()
-                        .add_run(Run::new().add_text("").size(ctx.font_size))
+                        .add_run(Run::new().add_text("").size(constants::FONT_SIZE))
                         .align(AlignmentType::Center)
                         .page_break_before(true)
                         .line_spacing(LineSpacing::new().after_lines(100)),
@@ -97,20 +99,20 @@ pub fn flatten_markdown(
                 }
                 paragraphs.push(
                     Paragraph::new()
-                        .add_run(Run::new().add_text(heading).size(ctx.font_size))
+                        .add_run(Run::new().add_text(heading).size(constants::FONT_SIZE))
                         .align(AlignmentType::Center)
                         .line_spacing(LineSpacing::new().after_lines(100)),
                 );
             }
 
-            let mut p = content_to_paragraphs(&ctx, md.content);
+            let mut p = content_to_paragraphs(md.content);
             if !p.is_empty() {
                 paragraphs.append(&mut p);
 
                 sep = Paragraph::new()
                     .add_run(Run::new().add_text("#"))
                     .align(AlignmentType::Center)
-                    .size(ctx.font_size)
+                    .size(constants::FONT_SIZE)
                     .line_spacing(LineSpacing::new().after_lines(100));
             }
         } else {
@@ -227,7 +229,7 @@ mod tests {
     #[test]
     fn test_trim_links() {
         let s = "This is a test. [This is a link](https://example.com). This is only a test.\nIf this were an actual emergency, you would be instructed where to go and what to do.";
-        println!("{}", trim_links(s));
+        // println!("{}", trim_links(s));
         assert!(trim_links(s) == "This is a test. This is a link. This is only a test.\nIf this were an actual emergency, you would be instructed where to go and what to do.");
     }
 
