@@ -941,6 +941,7 @@ dependencies = [
 [[package]]
 name = "obsidian-rs"
 version = "0.1.2"
+source = "git+https://github.com/adamisrael/obsidian-rs.git#cb03d30e3c8fd540875fb86dde9d868c1dd1be34"
 dependencies = [
  "flate2",
  "reqwest",
