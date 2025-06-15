@@ -118,7 +118,7 @@ Here's another example, of a [three-act novella](./examples/novella_with_parts/)
 .
 ├── Act 1
 │   ├── Chapter 1
-│   │   ├── [scene 1.md](./examples/novella_with_parts/Act 1/Chapter 1/scene 1.md)
+│   │   ├── scene 1.md
 │   │   ├── scene 2.md
 │   │   └── scene 3.md
 │   ├── Chapter 2
@@ -129,7 +129,7 @@ Here's another example, of a [three-act novella](./examples/novella_with_parts/)
 │   │   ├── scene 1.md
 │   │   ├── scene 2.md
 │   │   └── scene 3.md
-│   └── [metadata.md](./examples/novella_with_parts/Act 1/metadata.md)
+│   └── metadata.md
 ├── Act 2
 │   ├── Chapter 4
 │   │   ├── scene 1.md
@@ -158,8 +158,8 @@ Here's another example, of a [three-act novella](./examples/novella_with_parts/)
 │   │   ├── scene 2.md
 │   │   └── scene 3.md
 │   └── metadata.md
-├── [metadata.md](./examples/novella_with_parts/metadata.md)
-└── [PII.md](./examples/novella_with_parts/PII.md)
+├── metadata.md
+└── PII.md
 ```
 
 ## Bugs
@@ -169,6 +169,7 @@ Here's another example, of a [three-act novella](./examples/novella_with_parts/)
 ### Configuration Files
 
 Right now there is no configuration file for `md2ms`. All options are passed via command-line arguments.
+
 ### Scene Breaks
 
 There are the supported types of scene breaks that are auto-deteected:
