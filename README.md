@@ -90,12 +90,6 @@ include:
 
 Most of this is self-explanatory, but the `include` block is special. It lists the Markdown files that make up your manuscript. This allows you to keep research, notes, reader feedback, etc. in the same folder as your manuscript.
 
-## TODO:
-
-- Footnotes: Strip them out or format them properly?
-- Comments: Strip them out.
-- Content Warnings: Figure out how to best add a CW block to the manuscript.
-
 ## Obsidian Integration Details
 
 Consider the following structure:
