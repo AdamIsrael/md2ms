@@ -269,7 +269,20 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
                         .add_text(format!("by {}", metadata.author.unwrap()))
                         .size(constants::FONT_SIZE),
                 )
+                .align(AlignmentType::Center)
+                .line_spacing(LineSpacing::new().after_lines(100));
+        }
+
+        let mut cw = Paragraph::new();
+        if let Some(content_warnings) = metadata.content_warnings {
+            if !content_warnings.is_empty() {
+                cw = cw.add_run(
+                    Run::new()
+                        .add_text(format!("CW: {}", content_warnings.join(", ")))
+                        .size(constants::FONT_SIZE),
+                )
                 .align(AlignmentType::Center);
+            }
         }
 
         let end = Paragraph::new()
@@ -314,9 +327,10 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
             .add_paragraph(Paragraph::new())
             .add_paragraph(Paragraph::new())
             .add_paragraph(Paragraph::new())
-            // Add the title and byline
+            // Add the title, byline, and content warning (if present)
             .add_paragraph(title)
             .add_paragraph(byline)
+            .add_paragraph(cw)
             .add_paragraph(Paragraph::new())
             .add_paragraph(Paragraph::new());
 
