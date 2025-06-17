@@ -11,7 +11,14 @@ use yaml_front_matter::{Document, YamlFrontMatter};
 
 
 /// Convert the content of a Markdown into a collection of paragraphs.
-fn content_to_paragraphs(content: String) -> Vec<Paragraph> {
+fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
+
+    // Pre-process the content
+
+    // Add support single and multi-line %% comment blocks %%
+    let re = Regex::new(r"%%\s+.*?\s+%%").unwrap();
+    content = Regex::replace_all(&re, content.as_str(), "").to_string();
+
     let mut paragraphs: Vec<Paragraph> = vec![];
     let sep = Paragraph::new()
         .add_run(Run::new().add_text("#"))
