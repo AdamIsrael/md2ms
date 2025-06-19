@@ -42,7 +42,9 @@ impl ObsidianCommander {
     }
 
     pub fn add_file_menu(&mut self, file_menu: FileMenu) {
-        self.data.file_menu.retain(|x| !x.name.eq(file_menu.name.as_str()));
+        self.data
+            .file_menu
+            .retain(|x| !x.name.eq(file_menu.name.as_str()));
 
         self.data.file_menu.push(file_menu);
     }
@@ -63,8 +65,6 @@ impl ObsidianCommander {
 
         // self.data.shell_commands.retain(|x| !x.alias.eq(command));
         // self.data.shell_commands.retain(|x| !x.alias.eq(command));
-
-
     }
 }
 

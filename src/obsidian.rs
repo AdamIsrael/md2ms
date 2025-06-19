@@ -6,8 +6,8 @@ use obsidian_rs::Obsidian;
 
 use std::path::Path;
 
-use crate::obsidian_shellcommands::ObsidianShellcommands;
 use crate::obsidian_commander::{FileMenu, ObsidianCommander};
+use crate::obsidian_shellcommands::ObsidianShellcommands;
 
 // TODO: Might want to do required/recommended plugins in the future
 const PLUGINS: &[&str] = &["cmdr", "obsidian-shellcommands"];
@@ -27,67 +27,61 @@ pub fn update_obsidian_vault<P: AsRef<Path>>(
 
             // TODO: (re)configure the plugin?
             // It's not pretty, but I'll have to hard-code some plugin logic here.
-        //     match *plugin {
-        //         "cmdr" => {
-        //             if let Ok(mut p) = ObsidianCommander::new(
-        //                 o.clone(),
-        //                 &vault_folder,
-        //             ) {
-        //                 print!("Syncing commander...");
-        //                 print!("{:?}", p.data);
+            //     match *plugin {
+            //         "cmdr" => {
+            //             if let Ok(mut p) = ObsidianCommander::new(
+            //                 o.clone(),
+            //                 &vault_folder,
+            //             ) {
+            //                 print!("Syncing commander...");
+            //                 print!("{:?}", p.data);
 
-        //                 let fm = FileMenu {
-        //                     id: "obsidian-shellcommands:shell-command-zbyzvt4l2k".to_string(),
-        //                     icon: "lucide-book-template".to_string(),
-        //                     name: "Export to Standard Manuscript Format (Classic)".to_string(),
-        //                     mode: "desktop".to_string(),
-        //                 };
-        //                 p.add_file_menu(fm);
-        //                 p.sync();
+            //                 let fm = FileMenu {
+            //                     id: "obsidian-shellcommands:shell-command-zbyzvt4l2k".to_string(),
+            //                     icon: "lucide-book-template".to_string(),
+            //                     name: "Export to Standard Manuscript Format (Classic)".to_string(),
+            //                     mode: "desktop".to_string(),
+            //                 };
+            //                 p.add_file_menu(fm);
+            //                 p.sync();
 
-        //                 let _ = p.save();
-        //                 println!("done!");
-        //             }
+            //                 let _ = p.save();
+            //                 println!("done!");
+            //             }
 
-        //             // o.configure_plugin("obsidian-commander", "commander.json");
-        //         }
-        //         "obsidian-shellcommands" => {
-        //             // if let Ok(mut p) = ObsidianShellcommands::new(
-        //             //     o.clone(),
-        //             //     &export_path,
-        //             //     &vault_folder,
-        //             //     overwrite,
-        //             // ) {
-        //             //     print!("Syncing shell commands...");
-        //             //     p.sync();
+            //             // o.configure_plugin("obsidian-commander", "commander.json");
+            //         }
+            //         "obsidian-shellcommands" => {
+            //             // if let Ok(mut p) = ObsidianShellcommands::new(
+            //             //     o.clone(),
+            //             //     &export_path,
+            //             //     &vault_folder,
+            //             //     overwrite,
+            //             // ) {
+            //             //     print!("Syncing shell commands...");
+            //             //     p.sync();
 
-        //             //     let _ = p.save();
-        //             //     println!("done!");
-        //             // }
+            //             //     let _ = p.save();
+            //             //     println!("done!");
+            //             // }
 
-        //             // o.configure_plugin("obsidian-shellcommands", "shellcommands.json");
-        //         }
-        //         _ => {}
-        //     }
+            //             // o.configure_plugin("obsidian-shellcommands", "shellcommands.json");
+            //         }
+            //         _ => {}
+            //     }
         }
 
         // Sync the shell commands first
-        if let Ok(mut p) = ObsidianShellcommands::new(
-            o.clone(),
-            &export_path,
-            &vault_folder,
-            overwrite,
-        ) {
+        if let Ok(mut p) =
+            ObsidianShellcommands::new(o.clone(), &export_path, &vault_folder, overwrite)
+        {
             print!("Syncing shell commands...");
             p.sync();
 
             let _ = p.save();
             println!("done!");
 
-            if let Ok(mut cmdr) = ObsidianCommander::new(
-                o.clone(),
-                &vault_folder,
-            ) {
+            if let Ok(mut cmdr) = ObsidianCommander::new(o.clone(), &vault_folder) {
                 print!("Syncing commander...");
                 print!("{:?}", cmdr.data);
 
@@ -105,11 +99,9 @@ pub fn update_obsidian_vault<P: AsRef<Path>>(
                 let _ = cmdr.save();
                 println!("done!");
             }
-
         }
 
         // Sync Commander, which requires data from ObsidianShellCommands.
-
     }
 
     // o.update_vault();

@@ -5,8 +5,8 @@ pub mod error;
 pub mod markdown;
 pub mod metadata;
 pub mod obsidian;
-pub mod obsidian_shellcommands;
 pub mod obsidian_commander;
+pub mod obsidian_shellcommands;
 pub mod pii;
 pub mod utils;
 

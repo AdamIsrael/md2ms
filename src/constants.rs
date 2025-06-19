@@ -6,7 +6,4 @@ pub const FONT_SIZE: usize = 24;
 
 pub const DEFAULT_FONT: &str = "Times New Roman";
 
-pub const FONTS: &[&str] = &[
-    "Times New Roman",
-    "Courier New",
-];
+pub const FONTS: &[&str] = &["Times New Roman", "Courier New"];

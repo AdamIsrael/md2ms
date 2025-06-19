@@ -9,10 +9,8 @@ use docx_rs::*;
 use regex::Regex;
 use yaml_front_matter::{Document, YamlFrontMatter};
 
-
 /// Convert the content of a Markdown into a collection of paragraphs.
 fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
-
     // Pre-process the content
 
     // Add support single and multi-line %% comment blocks %%
@@ -119,7 +117,6 @@ pub fn flatten_markdown(
             if !p.is_empty() {
                 // Add all the paragraphs to the current list of paragraphs
                 paragraphs.append(&mut p);
-
 
                 sep = Paragraph::new()
                     .add_run(Run::new().add_text("#"))

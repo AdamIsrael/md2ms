@@ -47,7 +47,6 @@ pub fn main() -> Result<(), DocxError> {
             // TODO: We need to iterate through the combination of supported configurations in order
             // to generate a folder of manuscripts, not just a single manuscript.
             for font in constants::FONTS {
-
                 // For now, only generate Classic Manuscripts for Courier New, and TNR for Modern.
                 match *font {
                     "Courier New" => {
@@ -149,9 +148,19 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
             // Finally, format the file name with title, format, font, and if it's anonymous or not.
             // `Drafts/{title}/{title} - {format} - {font} ({anon}).docx`
             if ctx.anonymous {
-                docx_file.push(format!("{} - {} - {} (Anonymous).docx", metadata.title.clone().unwrap(), format, ctx.font.clone()));
+                docx_file.push(format!(
+                    "{} - {} - {} (Anonymous).docx",
+                    metadata.title.clone().unwrap(),
+                    format,
+                    ctx.font.clone()
+                ));
             } else {
-                docx_file.push(format!("{} - {} - {}.docx", metadata.title.clone().unwrap(), format, ctx.font.clone()));
+                docx_file.push(format!(
+                    "{} - {} - {}.docx",
+                    metadata.title.clone().unwrap(),
+                    format,
+                    ctx.font.clone()
+                ));
             }
             println!("Full path to output file: {:?}", docx_file);
         } else {
@@ -178,12 +187,14 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
                 }
                 if let Some(address1) = my.metadata.address1.clone() {
                     paragraphs.push(
-                        Paragraph::new().add_run(Run::new().add_text(address1).size(constants::FONT_SIZE)),
+                        Paragraph::new()
+                            .add_run(Run::new().add_text(address1).size(constants::FONT_SIZE)),
                     );
                 }
                 if let Some(address2) = my.metadata.address2.clone() {
                     paragraphs.push(
-                        Paragraph::new().add_run(Run::new().add_text(address2).size(constants::FONT_SIZE)),
+                        Paragraph::new()
+                            .add_run(Run::new().add_text(address2).size(constants::FONT_SIZE)),
                     );
                 }
                 if let Some(city) = my.metadata.city.clone() {
@@ -201,17 +212,20 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
                 }
                 if let Some(country) = my.metadata.country.clone() {
                     paragraphs.push(
-                        Paragraph::new().add_run(Run::new().add_text(country).size(constants::FONT_SIZE)),
+                        Paragraph::new()
+                            .add_run(Run::new().add_text(country).size(constants::FONT_SIZE)),
                     );
                 }
                 if let Some(email) = my.metadata.email.clone() {
                     paragraphs.push(
-                        Paragraph::new().add_run(Run::new().add_text(email).size(constants::FONT_SIZE)),
+                        Paragraph::new()
+                            .add_run(Run::new().add_text(email).size(constants::FONT_SIZE)),
                     );
                 }
                 if let Some(phone) = my.metadata.phone.clone() {
                     paragraphs.push(
-                        Paragraph::new().add_run(Run::new().add_text(phone).size(constants::FONT_SIZE)),
+                        Paragraph::new()
+                            .add_run(Run::new().add_text(phone).size(constants::FONT_SIZE)),
                     );
                 }
                 if let Some(affiliations) = my.metadata.affiliations.clone() {
@@ -276,12 +290,13 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
         let mut cw = Paragraph::new();
         if let Some(content_warnings) = metadata.content_warnings {
             if !content_warnings.is_empty() {
-                cw = cw.add_run(
-                    Run::new()
-                        .add_text(format!("CW: {}", content_warnings.join(", ")))
-                        .size(constants::FONT_SIZE),
-                )
-                .align(AlignmentType::Center);
+                cw = cw
+                    .add_run(
+                        Run::new()
+                            .add_text(format!("CW: {}", content_warnings.join(", ")))
+                            .size(constants::FONT_SIZE),
+                    )
+                    .align(AlignmentType::Center);
             }
         }
 

@@ -150,7 +150,12 @@ impl ObsidianShellcommands {
             };
             self.data.shell_commands.retain(|x| !x.alias.eq(command));
             // Only append if the command is not already present
-            if !self.data.shell_commands.iter().any(|x| x.alias.eq(&c.alias)) {
+            if !self
+                .data
+                .shell_commands
+                .iter()
+                .any(|x| x.alias.eq(&c.alias))
+            {
                 self.data.shell_commands.push(c.clone());
             }
         }

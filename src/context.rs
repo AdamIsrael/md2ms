@@ -42,7 +42,6 @@ pub struct Context {
 }
 
 impl Clone for Context {
-
     // We can't clone Context directly because of the Document<Metadata> and Document<PII> types.
     // This clone will clone the individual fields to give us a copy of the Context. There might
     // be better ways/places to handle this, but this works for now.
