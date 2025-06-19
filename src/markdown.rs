@@ -31,6 +31,8 @@ fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
             if !line.is_empty() {
                 // need an "is separator function"
                 if line.trim() == "#" {
+                    // This will add the separator for single Markdown documents that explicitly
+                    // include the separator, like the `standalone.md` example.
                     paragraphs.push(sep.clone());
                 } else {
                     // Parse the paragraph into runs, which will handle simple formatting.
@@ -79,18 +81,15 @@ pub fn flatten_markdown(
         // let markdown = ctx.get_file_metadata(file.clone());
         // println!("Markdown for {}: {:?}", file, markdown);
 
-        if let Some(md) = ctx.get_file(file) {
+        if let Some(md) = ctx.get_file(file.clone()) {
             // is this still needed?
-            if !sep.raw_text().is_empty() {
-                paragraphs.push(sep.clone());
-            }
 
             // If there is a heading in the metadata, add it here.
             if let Some(heading) = md.metadata.heading.clone() {
+                // Reset the separator
+                sep = Paragraph::new();
                 // TODO: Add page break before the heading
                 // Center heading on page?
-                // TODO: Only page break/center if it's a new section. A new chapter,
-                // for example, should start at the top of a new page
                 paragraphs.push(
                     Paragraph::new()
                         .add_run(Run::new().add_text("").size(constants::FONT_SIZE))
@@ -110,9 +109,17 @@ pub fn flatten_markdown(
                 );
             }
 
+            // If there is a separator, add it to the list of paragraphs to create a visible
+            // break between scenes.
+            if !sep.raw_text().is_empty() {
+                paragraphs.push(sep.clone());
+            }
+
             let mut p = content_to_paragraphs(md.content);
             if !p.is_empty() {
+                // Add all the paragraphs to the current list of paragraphs
                 paragraphs.append(&mut p);
+
 
                 sep = Paragraph::new()
                     .add_run(Run::new().add_text("#"))
@@ -123,7 +130,7 @@ pub fn flatten_markdown(
         } else {
             // TODO: Handle this better. Return an Err maybe?
             // If a file is noted to be included, but we can't find it, that's a problem.
-            // println!("Failed to get file: {}", file);
+            println!("Failed to get file: {}", file);
         }
     }
 
