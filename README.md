@@ -29,7 +29,7 @@ md2ms obsidian /path/to/obsidian/vault
 
 This will download, install, and activate the two required Obsidian plugins, which will then be configured for use with `md2ms`. You can run the command multiple times to update the plugins or to reinstall missing shortcuts.
 
-**NOTE**: You will need to re-open your vault after running this command in order for the changes to take effect.
+**NOTE**: For best results, you should close your vault before running this command. The vault needs to be re-opened for the changes to take effect.
 
 In Obsidian, right-click on the folder containing your Markdown files and choose "Export to Standard Manuscript Format".
 
