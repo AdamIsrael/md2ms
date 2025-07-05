@@ -125,17 +125,16 @@ impl ObsidianShellcommands {
 
         command.command_palette_availability = "enabled".to_string();
 
+        command.output_channel_order = "stdout-first".to_string();
+        command.output_handling_mode = "buffered".to_string();
+        command.execution_notification_mode = "disabled".to_string();
+
         command
     }
 
     fn get_cmd_export_to_standard_manuscript_format(&self) -> ShellCommand {
         let mut command = self.get_cmd_export_base();
         command.alias = "Export to Standard Manuscript Format".to_string();
-        command
-            .platform_specific_commands
-            .default
-            .push_str(" --modern");
-
         command
     }
 

@@ -16,3 +16,15 @@ pub struct Metadata {
     /// The heading to use when rendering the child documents
     pub heading: Option<String>,
 }
+
+impl Metadata {
+    pub fn is_empty(&self) -> bool {
+        self.content_warnings.is_none()
+            && self.include.is_none()
+            && self.short_title.is_none()
+            && self.short_author.is_none()
+            && self.title.is_none()
+            && self.author.is_none()
+            && self.heading.is_none()
+    }
+}

@@ -5,6 +5,8 @@ use md2ms::constants;
 use clap::Parser;
 use yaml_front_matter::Document;
 
+use std::path::PathBuf;
+
 use docx_rs::*;
 use md2ms::context::Context;
 use md2ms::markdown::flatten_markdown;
@@ -18,10 +20,6 @@ pub fn main() -> Result<(), DocxError> {
 
     match &cli.command {
         Commands::Obsidian(args) => {
-            // TODO: write code to integrate w/ Obsidian
-            // TODO: remove Obsidian integration?
-            // println!("'obsidian' was used but is not implemented yet");
-
             if let Some(export_path) = args.export_path.clone() {
                 if let Some(vault_folder) = args.vault_folder.clone() {
                     println!("Updating Obsidian vault...");
@@ -77,6 +75,7 @@ pub fn main() -> Result<(), DocxError> {
                     }
                 }
             }
+            println!("Compiled manuscripts to {}", ctx.output_dir.display());
         }
     }
 
@@ -109,10 +108,19 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
             mddoc.metadata = metadata.metadata.clone();
         }
     } else {
-        // use the metadata from the first file
-        if let Some(v) = ctx.files.values().next() {
-            mddoc.metadata = v.metadata.clone();
-            mddoc.content = v.content.clone();
+        // If we're in a folder without a metadata.md, we assume it contains a standalone
+        // manuscript. This may not work as expected if we find multiple files containing
+        // embedded metadata.
+        for file in ctx.files.values() {
+            if ! file.metadata.is_empty() {
+                // TODO: if we encounter a second file with metadata, abort and raise an alert
+                if ! mddoc.metadata.is_empty() && !mddoc.content.is_empty() {
+                    println!("Found two files with metadata. Please use a metadata.md.");
+                    return Ok(());
+                }
+                mddoc.metadata = file.metadata.clone();
+                mddoc.content = file.content.clone();
+            }
         }
     }
 
@@ -134,14 +142,21 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
         let nwc = round_up(wc.words);
 
         // A PathBuf to build the path to the output file
-        let docx_file = &mut ctx.output_dir;
+        let output_dir = shellexpand::tilde(&ctx.output_dir.to_string_lossy()).to_string();
+        let docx_file = &mut PathBuf::from(output_dir);
 
         let mut format = String::from("Modern");
         if ctx.classic {
             format = String::from("Classic");
         }
 
+        // println!("Files: {:?}", ctx.files.values());
+        if metadata.is_empty() {
+            println!("Metadata: {:?}", metadata);
+            return Err(DocxError::Unknown);
+        }
         docx_file.push(format!("{}/", metadata.title.clone().unwrap()));
+        // println!("Generating manuscript(s) in {}", docx_file.display());
 
         // Create the directory, if it doesn't exist
         if std::fs::create_dir_all(docx_file.clone()).is_ok() {
@@ -162,7 +177,7 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
                     ctx.font.clone()
                 ));
             }
-            println!("Full path to output file: {:?}", docx_file);
+            // println!("Full path to output file: {:?}", docx_file);
         } else {
             // Abort if we can't create the directory
             return Err(DocxError::Unknown);

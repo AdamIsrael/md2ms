@@ -110,18 +110,29 @@ impl Clone for Context {
 
 impl Context {
     pub fn new(args: &CompileArgs) -> Self {
-        let basedir = args.filename_or_path.clone();
-
-        // Every author has a different place for this. We just need a sane default
-        let default_output_dir = PathBuf::from(
-            shellexpand::tilde("~/Documents/Writing")
+        // let mut basedir = args.filename_or_path.clone();
+        let basedir = PathBuf::from(
+            shellexpand::tilde(&args.filename_or_path)
                 .to_string()
                 .to_owned(),
         );
 
+        // Every author has a different place for this. We just need a sane default
+        let default_output_dir: PathBuf;
+        if args.output_dir.is_some() {
+            default_output_dir = PathBuf::from(
+                // TODO: Clean this up so we're not calling a bare unwrap
+                shellexpand::tilde(&args.output_dir.clone().unwrap().to_string_lossy().to_string())
+                    .to_string()
+                    .to_owned(),
+            );
+        } else {
+            default_output_dir = PathBuf::new();
+        }
+
         let mut s = Self {
             anonymous: false,
-            basedir: basedir.clone(),
+            basedir: basedir.to_string_lossy().to_string().clone(),
             classic: false,
             files: HashMap::new(),
 
@@ -138,14 +149,19 @@ impl Context {
         // TODO: read/parse in the PII so that it's available via Context
         if !s.anonymous {
             if let Some(pii) = args.pii.clone() {
-                let pii = slurp(pii);
+                let pii_path = PathBuf::from(
+                    shellexpand::tilde(&pii)
+                        .to_string()
+                        .to_owned(),
+                );
+
+                let pii = slurp(pii_path);
                 if let Ok(pii) = parse_pii(pii) {
                     s.pii = Some(pii);
                 }
             }
         }
-
-        s.files = s.read_files(basedir.clone());
+        s.files = s.read_files(s.basedir.clone());
 
         s
     }

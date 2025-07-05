@@ -69,7 +69,7 @@ pub fn flatten_markdown(
     // TODO: support variable font sizes (typically 10/12pt.
     // If the metadata doesn't include an include stanza, there's nothing to flatten; it's a standalone document.
     if document.metadata.include.is_none() {
-        println!("No include in metadata");
+        // println!("No include in metadata");
         return Ok(content_to_paragraphs(document.content));
     }
 
