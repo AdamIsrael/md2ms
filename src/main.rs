@@ -214,7 +214,7 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
                             paragraphs.push(
                                 Paragraph::new().add_run(
                                     Run::new()
-                                        .add_text(format!("{}, {}, {}", city, state, postal_code))
+                                        .add_text(format!("{city}, {state}, {postal_code}"))
                                         .size(constants::FONT_SIZE),
                                 ),
                             );
@@ -264,7 +264,7 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
                 Paragraph::new()
                     .add_run(
                         Run::new()
-                            .add_text(format!("about {} words", nwc))
+                            .add_text(format!("about {nwc} words"))
                             .size(constants::FONT_SIZE),
                     )
                     .align(AlignmentType::Right),
