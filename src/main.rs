@@ -150,13 +150,10 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
             format = String::from("Classic");
         }
 
-        // println!("Files: {:?}", ctx.files.values());
         if metadata.is_empty() {
-            println!("Metadata: {:?}", metadata);
             return Err(DocxError::Unknown);
         }
         docx_file.push(format!("{}/", metadata.title.clone().unwrap()));
-        // println!("Generating manuscript(s) in {}", docx_file.display());
 
         // Create the directory, if it doesn't exist
         if std::fs::create_dir_all(docx_file.clone()).is_ok() {
@@ -177,7 +174,6 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
                     ctx.font.clone()
                 ));
             }
-            // println!("Full path to output file: {:?}", docx_file);
         } else {
             // Abort if we can't create the directory
             return Err(DocxError::Unknown);
