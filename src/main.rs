@@ -112,9 +112,9 @@ fn compile(ctx: &mut Context) -> Result<(), DocxError> {
         // manuscript. This may not work as expected if we find multiple files containing
         // embedded metadata.
         for file in ctx.files.values() {
-            if ! file.metadata.is_empty() {
+            if !file.metadata.is_empty() {
                 // TODO: if we encounter a second file with metadata, abort and raise an alert
-                if ! mddoc.metadata.is_empty() && !mddoc.content.is_empty() {
+                if !mddoc.metadata.is_empty() && !mddoc.content.is_empty() {
                     println!("Found two files with metadata. Please use a metadata.md.");
                     return Ok(());
                 }

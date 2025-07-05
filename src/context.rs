@@ -118,17 +118,23 @@ impl Context {
         );
 
         // Every author has a different place for this. We just need a sane default
-        let default_output_dir: PathBuf;
-        if args.output_dir.is_some() {
-            default_output_dir = PathBuf::from(
+        let default_output_dir: PathBuf = if args.output_dir.is_some() {
+            PathBuf::from(
                 // TODO: Clean this up so we're not calling a bare unwrap
-                shellexpand::tilde(&args.output_dir.clone().unwrap().to_string_lossy().to_string())
-                    .to_string()
-                    .to_owned(),
-            );
+                shellexpand::tilde(
+                    &args
+                        .output_dir
+                        .clone()
+                        .unwrap()
+                        .to_string_lossy()
+                        .to_string(),
+                )
+                .to_string()
+                .to_owned(),
+            )
         } else {
-            default_output_dir = PathBuf::new();
-        }
+            PathBuf::new()
+        };
 
         let mut s = Self {
             anonymous: false,
@@ -149,11 +155,7 @@ impl Context {
         // TODO: read/parse in the PII so that it's available via Context
         if !s.anonymous {
             if let Some(pii) = args.pii.clone() {
-                let pii_path = PathBuf::from(
-                    shellexpand::tilde(&pii)
-                        .to_string()
-                        .to_owned(),
-                );
+                let pii_path = PathBuf::from(shellexpand::tilde(&pii).to_string().to_owned());
 
                 let pii = slurp(pii_path);
                 if let Ok(pii) = parse_pii(pii) {

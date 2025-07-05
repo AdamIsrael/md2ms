@@ -95,7 +95,10 @@ mod tests {
     /// md2ms examples/standalone.md
     fn test_get_base_filename_standalone() {
         let path = "standalone.md";
-        let base = get_base_filename("examples/standalone/standalone.md".to_string(), path.to_string());
+        let base = get_base_filename(
+            "examples/standalone/standalone.md".to_string(),
+            path.to_string(),
+        );
         assert_eq!(base, "standalone.md");
     }
 
