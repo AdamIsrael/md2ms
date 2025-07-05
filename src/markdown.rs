@@ -127,7 +127,7 @@ pub fn flatten_markdown(
         } else {
             // TODO: Handle this better. Return an Err maybe?
             // If a file is noted to be included, but we can't find it, that's a problem.
-            println!("Failed to get file: {}", file);
+            println!("Failed to get file: {file}");
         }
     }
 

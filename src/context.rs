@@ -121,16 +121,9 @@ impl Context {
         let default_output_dir: PathBuf = if args.output_dir.is_some() {
             PathBuf::from(
                 // TODO: Clean this up so we're not calling a bare unwrap
-                shellexpand::tilde(
-                    &args
-                        .output_dir
-                        .clone()
-                        .unwrap()
-                        .to_string_lossy()
-                        .to_string(),
-                )
-                .to_string()
-                .to_owned(),
+                shellexpand::tilde(&args.output_dir.clone().unwrap().to_string_lossy().to_string())
+                    .to_string()
+                    .to_owned(),
             )
         } else {
             PathBuf::new()
@@ -155,7 +148,11 @@ impl Context {
         // TODO: read/parse in the PII so that it's available via Context
         if !s.anonymous {
             if let Some(pii) = args.pii.clone() {
-                let pii_path = PathBuf::from(shellexpand::tilde(&pii).to_string().to_owned());
+                let pii_path = PathBuf::from(
+                    shellexpand::tilde(&pii)
+                        .to_string()
+                        .to_owned(),
+                );
 
                 let pii = slurp(pii_path);
                 if let Ok(pii) = parse_pii(pii) {
@@ -245,7 +242,7 @@ impl Context {
                                 md,
                             );
                         } else {
-                            println!("Failed to parse {:?}", p);
+                            println!("Failed to parse {p}");
                         }
                     }
                 } else if path.is_dir() {
