@@ -1,4 +1,19 @@
 use std::fmt;
+use thiserror::Error;
+// use zip::result::ZipError;
+
+#[derive(Debug, Error)]
+pub enum Md2msError {
+    #[error("Included file not found")]
+    FileNotFound(String),
+    #[error("Metadata is missing `include` key")]
+    NoFilesInMetadata,
+    #[error("Error packing the document")]
+    PackError,
+    // PackError(#[from] ZipError),
+    #[error("An unknown error occurred")]
+    Unknown,
+}
 
 #[derive(Debug)]
 pub enum ObsidianError {
