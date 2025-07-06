@@ -45,10 +45,11 @@ fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
                                 .line(480), // double spaced
                         )
                         // Indent the first line: one half-inch
-                        // FIX: The indent is a little bigger than Shunn recommends (one half-inch)
                         // https://stackoverflow.com/questions/14360183/default-wordml-unit-measurement-pixel-or-point-or-inches
                         // 1.48cm == 0.5826772 inches == 839.05 dxa
-                        .indent(None, Some(SpecialIndentType::FirstLine(839)), None, None);
+                        // According to a Scrivener-compiled document, the indentation should be:
+                        // 0.63cm == 0.2480315 inches == 357.16536 dxa
+                        .indent(None, Some(SpecialIndentType::FirstLine(357)), None, None);
                     for run in runs {
                         p = p.add_run(run);
                     }
