@@ -3,6 +3,7 @@
 use crate::cmark::parse_paragraph;
 use crate::constants;
 use crate::context::Context;
+use crate::error::Md2msError;
 use crate::metadata::Metadata;
 use crate::pii::PII;
 use docx_rs::*;
@@ -62,7 +63,7 @@ fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
 pub fn flatten_markdown(
     ctx: &mut Context,
     document: Document<Metadata>,
-) -> Result<Vec<Paragraph>, &'static str> {
+) -> Result<Vec<Paragraph>, Md2msError> {
     let mut paragraphs: Vec<Paragraph> = vec![];
     let mut sep = Paragraph::new();
 
@@ -78,6 +79,10 @@ pub fn flatten_markdown(
         // I've added a per-folder metadata file, but need to handle it.
         // let markdown = ctx.get_file_metadata(file.clone());
         // println!("Markdown for {}: {:?}", file, markdown);
+
+        if !ctx.file_exists(file.clone()) {
+            return Err(Md2msError::FileNotFound(file));
+        }
 
         if let Some(md) = ctx.get_file(file.clone()) {
             // is this still needed?
@@ -125,9 +130,8 @@ pub fn flatten_markdown(
                     .line_spacing(LineSpacing::new().after_lines(100));
             }
         } else {
-            // TODO: Handle this better. Return an Err maybe?
             // If a file is noted to be included, but we can't find it, that's a problem.
-            println!("Failed to get file: {file}");
+            return Err(Md2msError::FileNotFound(file));
         }
     }
 
