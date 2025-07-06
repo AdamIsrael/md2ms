@@ -168,6 +168,11 @@ impl Context {
         s
     }
 
+    /// Check if a file exists in the context.
+    pub fn file_exists(&mut self, filename: String) -> bool {
+        self.files.contains_key(&filename)
+    }
+
     pub fn get_file(&mut self, filename: String) -> Option<Document<Metadata>> {
         let file = self.files.get(&filename).unwrap();
         Some(Document {
