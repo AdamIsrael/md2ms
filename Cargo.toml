@@ -25,3 +25,4 @@ serde_json = "1.0.140"
 obsidian-rs = { git = "https://github.com/adamisrael/obsidian-rs.git" }
 # obsidian-rs = { path = "../obsidian-rs" }
 rand = "0.9.1"
+thiserror = "2.0.12"
