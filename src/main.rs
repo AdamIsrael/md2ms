@@ -3,6 +3,7 @@
 use md2ms::constants;
 
 use clap::Parser;
+use thousands::Separable;
 use yaml_front_matter::Document;
 
 use std::path::PathBuf;
@@ -168,7 +169,7 @@ fn compile(ctx: &mut Context) -> Result<(), Md2msError> {
 
             // If the author wants the word count, give them the exact count, not the approximate value.
             if ctx.word_count {
-                println!("Exact word count: {}", wc.words);
+                println!("Exact word count: {}", wc.words.separate_with_commas());
                 return Ok(());
             }
 
@@ -300,7 +301,7 @@ fn compile(ctx: &mut Context) -> Result<(), Md2msError> {
                     Paragraph::new()
                         .add_run(
                             Run::new()
-                                .add_text(format!("about {nwc} words"))
+                                .add_text(format!("about {} words", nwc.separate_with_commas()))
                                 .size(constants::FONT_SIZE),
                         )
                         .align(AlignmentType::Right),
