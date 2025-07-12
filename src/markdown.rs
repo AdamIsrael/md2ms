@@ -10,13 +10,21 @@ use docx_rs::*;
 use regex::Regex;
 use yaml_front_matter::{Document, YamlFrontMatter};
 
+/// Strip Markdown comments out of the content
+fn strip_comments(mut content: String) -> String {
+    // Add support single and multi-line %% comment blocks %%
+    let re = Regex::new(r"(?s)%%\s+.*?\s+%%").unwrap();
+    content = Regex::replace_all(&re, content.as_str(), "").to_string();
+    // Trim the whitespace we may have left behind
+    content.trim().to_string()
+}
+
 /// Convert the content of a Markdown into a collection of paragraphs.
 fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
     // Pre-process the content
 
     // Add support single and multi-line %% comment blocks %%
-    let re = Regex::new(r"%%\s+.*?\s+%%").unwrap();
-    content = Regex::replace_all(&re, content.as_str(), "").to_string();
+    content = strip_comments(content);
 
     let mut paragraphs: Vec<Paragraph> = vec![];
     let sep = Paragraph::new()
@@ -194,7 +202,7 @@ pub fn parse_markdown(md: String) -> Result<Document<Metadata>, &'static str> {
     // This is supporting a very lightweight subset of Markdown (content, not formatting), so this should be enough.
 
     // Eliminate double whitespace
-    document.content = trim_whitespace(document.content.as_str());
+    document.content = trim_doublespace(document.content.as_str());
 
     // Remove hyperlinks
     document.content = trim_links(document.content.as_str());
@@ -203,7 +211,7 @@ pub fn parse_markdown(md: String) -> Result<Document<Metadata>, &'static str> {
 }
 
 /// Trim double-spaces from a string.
-fn trim_whitespace(s: &str) -> String {
+fn trim_doublespace(s: &str) -> String {
     let re = Regex::new(r"[ ]+").unwrap();
     re.replace_all(s, " ").to_string()
 }
@@ -234,10 +242,29 @@ mod tests {
     This is the content of the markdown file
     "#;
 
+    const COMMENTS: &str = r#"
+    %%
+
+    Attempting to follow the structure from this series of articles:
+    https://storybilder.com/blog/structure-flash-fiction-part-1
+    https://storybilder.com/blog/structure-flash-fiction-part-2
+
+    %%
+
+    %% 1. In 2-3 sentences, set the place and introduce the character(s). %%
+
+    "#;
+
     #[test]
-    fn test_trim_whitespace() {
+    fn test_strip_comments() {
+        let content = strip_comments(COMMENTS.to_string());
+        assert!(content.is_empty());
+    }
+
+    #[test]
+    fn test_trim_doublespace() {
         let s = "This is a test.  This is only a test.\nIf this were an actual emergency, you would be instructed where to go and what to do.";
-        assert!(trim_whitespace(s) == "This is a test. This is only a test.\nIf this were an actual emergency, you would be instructed where to go and what to do.");
+        assert!(trim_doublespace(s) == "This is a test. This is only a test.\nIf this were an actual emergency, you would be instructed where to go and what to do.");
     }
 
     #[test]
