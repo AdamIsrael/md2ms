@@ -5,6 +5,10 @@ use docx_rs::Run;
 use pulldown_cmark::Options;
 use pulldown_cmark::{Event, Parser, Tag, TextMergeStream};
 
+pub fn new_run_with_size() -> Run {
+    Run::new().size(constants::FONT_SIZE)
+}
+
 /// Parse a paragraph of a Markdown document into a list of Runs
 pub fn parse_paragraph(input: &str) -> Vec<Run> {
     let mut runs: Vec<Run> = vec![];
@@ -14,7 +18,7 @@ pub fn parse_paragraph(input: &str) -> Vec<Run> {
     let parser = Parser::new_ext(input, options);
     let iterator = TextMergeStream::new(parser);
 
-    let mut run = Run::new();
+    let mut run = new_run_with_size();
     for event in iterator {
         match event {
             Event::Start(name) => {
@@ -26,15 +30,15 @@ pub fn parse_paragraph(input: &str) -> Vec<Run> {
                         // That's no longer the case with digital text, so we'll use italics instead.
                         // TODO: Make this configurable?
                         runs.push(run);
-                        run = Run::new().italic();
+                        run = new_run_with_size().italic();
                     }
                     Tag::Strong => {
                         runs.push(run);
-                        run = Run::new().bold();
+                        run = new_run_with_size().bold();
                     }
                     Tag::Strikethrough => {
                         runs.push(run);
-                        run = Run::new().strike();
+                        run = new_run_with_size().strike();
                     }
                     _ => {}
                 }
@@ -46,8 +50,8 @@ pub fn parse_paragraph(input: &str) -> Vec<Run> {
             }
             Event::End(_) => {
                 // We're at the end of a run, so save what we have and start the next one.
-                runs.push(run.size(constants::FONT_SIZE));
-                run = Run::new();
+                runs.push(run);
+                run = new_run_with_size();
             }
             _ => {}
         }
