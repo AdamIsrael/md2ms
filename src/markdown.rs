@@ -35,7 +35,8 @@ fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
 
     if content.lines().count() > 0 {
         content.lines().for_each(|line| {
-            if !line.is_empty() {
+            // If the line is empty, skip it. We'll handle line spacing elsewhere.
+            if !line.trim().is_empty() {
                 // need an "is separator function"
                 if line.trim() == "#" {
                     // This will add the separator for single Markdown documents that explicitly
