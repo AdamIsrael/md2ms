@@ -39,6 +39,17 @@ pub fn main() -> Result<(), Md2msError> {
             let ctx = Context::new(args);
 
             if ctx.word_count {
+                // TODO: support doing a word count on part of the manuscript
+                // Right now we compile the whole thing and do a word count, but
+                // what if we only want to count words in a section or chapter?
+                //
+                // This needs to be smarter. Right now, Obsidian is passing the folder of the currently open file,
+                // which means having to open metadata.md and then checking the word count. There must be a better way.
+                // What I might have to do is a two-fold word count: one for the entire manuscript and another for
+                // the current section or chapter.
+                // That means parsing the single file that's open, and walking it backwards to find the metadata.md.
+
+
                 // We only need to run compile once to get the word count
                 let mut c = ctx.clone();
                 let _ = compile(&mut c);
