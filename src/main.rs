@@ -49,7 +49,6 @@ pub fn main() -> Result<(), Md2msError> {
                 // the current section or chapter.
                 // That means parsing the single file that's open, and walking it backwards to find the metadata.md.
 
-
                 // We only need to run compile once to get the word count
                 let mut c = ctx.clone();
                 let _ = compile(&mut c);
