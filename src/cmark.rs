@@ -15,6 +15,7 @@ pub fn parse_paragraph(input: &str) -> Vec<Run> {
 
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
+
     let parser = Parser::new_ext(input, options);
     let iterator = TextMergeStream::new(parser);
 
@@ -61,12 +62,12 @@ pub fn parse_paragraph(input: &str) -> Vec<Run> {
 
 #[cfg(test)]
 mod tests {
-    // use super::*; // Import the parent module's items
+    use super::*; // Import the parent module's items
 
     #[test]
     fn test_basic_parsing() {
-        // let input = "Hello world, this is a ~~complicated~~ *very simple* example.";
-        // let runs = parse_paragraph(input);
-        // assert!(runs.len() == 5);
+        let input = "Hello world, this is a ~~complicated~~ *very simple* _example_.";
+        let runs = parse_paragraph(input);
+        assert!(runs.len() == 7);
     }
 }
