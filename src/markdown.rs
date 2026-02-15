@@ -19,12 +19,22 @@ fn strip_comments(mut content: String) -> String {
     content.trim().to_string()
 }
 
+/// Convert hyphens to em-dashes
+fn convert_hyphens_to_em_dashes(mut content: String) -> String {
+    let re = Regex::new(r"(\s+--\s+)").unwrap();
+    content = Regex::replace_all(&re, content.as_str(), "—").to_string();
+    content.trim().to_string()
+}
+
 /// Convert the content of a Markdown into a collection of paragraphs.
 fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
     // Pre-process the content
 
     // Add support single and multi-line %% comment blocks %%
     content = strip_comments(content);
+
+    // Replace double-hyphens to em-dashes
+    content = convert_hyphens_to_em_dashes(content);
 
     let mut paragraphs: Vec<Paragraph> = vec![];
     let sep = Paragraph::new()
@@ -260,6 +270,12 @@ mod tests {
     fn test_strip_comments() {
         let content = strip_comments(COMMENTS.to_string());
         assert!(content.is_empty());
+    }
+
+    #[test]
+    fn test_convert_hyphens_to_em_dashes() {
+        let content = convert_hyphens_to_em_dashes("This is a test -- only a test -- he was told.".to_string());
+        assert!(content == "This is a test—only a test—he was told.");
     }
 
     #[test]
