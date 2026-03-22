@@ -274,7 +274,9 @@ mod tests {
 
     #[test]
     fn test_convert_hyphens_to_em_dashes() {
-        let content = convert_hyphens_to_em_dashes("This is a test -- only a test -- he was told.".to_string());
+        let content = convert_hyphens_to_em_dashes(
+            "This is a test -- only a test -- he was told.".to_string(),
+        );
         assert!(content == "This is a test—only a test—he was told.");
     }
 
