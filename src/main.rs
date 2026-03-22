@@ -3,9 +3,9 @@
 
 use clap::Parser;
 use docx_rs::*;
+use md_word_count::count_words;
 use thousands::Separable;
 use yaml_front_matter::Document;
-use md_word_count::count_words;
 
 use std::path::PathBuf;
 

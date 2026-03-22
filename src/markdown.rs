@@ -11,7 +11,6 @@ use crate::error::Md2msError;
 use crate::metadata::Metadata;
 use crate::pii::PII;
 
-
 /// Strip Markdown comments out of the content
 fn strip_comments(mut content: String) -> String {
     // Add support single and multi-line %% comment blocks %%
