@@ -13,7 +13,6 @@ readme = "README.md"
 docx-rs = { git = "https://github.com/bokuweb/docx-rs.git" }
 clap = { version = "4.0", features = ["derive"] }
 serde = "1.0.218"
-words-count = "0.1.6"
 yaml-front-matter = "0.1.0"
 regex = "1.11.1"
 pulldown-cmark = { version = "0.13.0", default-features = false }
@@ -27,3 +26,4 @@ obsidian-rs = { git = "https://github.com/adamisrael/obsidian-rs.git" }
 rand = "0.9.1"
 thiserror = "2.0.12"
 thousands = "0.2.0"
+md-word-count = "0.1.1"

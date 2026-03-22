@@ -1,14 +1,15 @@
 // Syntax: md2ms [options] <file>
 // md2ms --output-dir <dir> <files>
-use md2ms::constants;
 
 use clap::Parser;
+use docx_rs::*;
+use md_word_count::count_words;
 use thousands::Separable;
 use yaml_front_matter::Document;
 
 use std::path::PathBuf;
 
-use docx_rs::*;
+use md2ms::constants;
 use md2ms::context::Context;
 use md2ms::error::Md2msError;
 use md2ms::markdown::flatten_markdown;
@@ -174,17 +175,23 @@ fn compile(ctx: &mut Context) -> Result<(), Md2msError> {
 
     match flatten_markdown(ctx, mddoc) {
         Ok(md) => {
-            // Using this crate for now, but maybe convert this to my own code
-            let wc = words_count::count(md.iter().map(|p| p.raw_text()).collect::<String>());
+            // Calculate the word count by iterating through the raw Markdown files.
+            let mut wc = 0;
+            for (f, markdown) in ctx.clone().files {
+                if f == "metadata.md" {
+                    continue;
+                }
+                wc += count_words(markdown.content.as_str());
+            }
 
             // If the author wants the word count, give them the exact count, not the approximate value.
             if ctx.word_count {
-                println!("Exact word count: {}", wc.words.separate_with_commas());
+                println!("Exact word count: {}", wc.separate_with_commas());
                 return Ok(());
             }
 
             // Round up for the manuscript
-            let nwc = round_up(wc.words);
+            let nwc = round_up(wc);
 
             // A PathBuf to build the path to the output file
             let output_dir = shellexpand::tilde(&ctx.output_dir.to_string_lossy()).to_string();

@@ -1,14 +1,15 @@
 // use std::collections::HashMap;
 
+use docx_rs::*;
+use regex::Regex;
+use yaml_front_matter::{Document, YamlFrontMatter};
+
 use crate::cmark::parse_paragraph;
 use crate::constants;
 use crate::context::Context;
 use crate::error::Md2msError;
 use crate::metadata::Metadata;
 use crate::pii::PII;
-use docx_rs::*;
-use regex::Regex;
-use yaml_front_matter::{Document, YamlFrontMatter};
 
 /// Strip Markdown comments out of the content
 fn strip_comments(mut content: String) -> String {
