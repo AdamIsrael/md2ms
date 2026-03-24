@@ -45,6 +45,8 @@ fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
         .line_spacing(LineSpacing::new().after_lines(100));
 
     if content.lines().count() > 0 {
+        let mut blockquote = false;
+
         content.lines().for_each(|line| {
             // If the line is empty, skip it. We'll handle line spacing elsewhere.
             if !line.trim().is_empty() {
@@ -53,7 +55,53 @@ fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
                     // This will add the separator for single Markdown documents that explicitly
                     // include the separator, like the `standalone.md` example.
                     paragraphs.push(sep.clone());
+                } else if line.starts_with(">") {
+                    // This is a blockquote, so it needs to be handled correctly:
+                    // a centered # before and after the text, and the blockquote should
+                    // be indented "one half-inch from the left margin"
+                    // https://www.shunn.net/format/2010/09/long_quotations_within_your_te.html
+
+                    // The first time we encounter a blockquote, inject a centered # before it
+                    if !blockquote {
+                        let sep = Paragraph::new()
+                            .add_run(Run::new().add_text("#"))
+                            .align(AlignmentType::Center)
+                            .size(constants::FONT_SIZE)
+                            .line_spacing(LineSpacing::new().after_lines(100));
+                        paragraphs.push(sep);
+                    }
+                    blockquote = true;
+
+                    let runs = parse_paragraph(line);
+
+                    let mut p = Paragraph::new()
+                        .align(AlignmentType::Center)
+                        .line_spacing(
+                            LineSpacing::new()
+                                .line_rule(LineSpacingType::Auto)
+                                .line(480), // double spaced
+                        )
+                        .indent(
+                            Some(357),
+                            Some(SpecialIndentType::FirstLine(357)),
+                            None,
+                            None,
+                        );
+                    for run in runs {
+                        p = p.add_run(run).align(AlignmentType::Left);
+                    }
+                    paragraphs.push(p);
                 } else {
+                    // Inject a closing centered # after the blockquote
+                    if blockquote {
+                        let sep = Paragraph::new()
+                            .add_run(Run::new().add_text("#"))
+                            .align(AlignmentType::Center)
+                            .size(constants::FONT_SIZE)
+                            .line_spacing(LineSpacing::new().after_lines(100));
+                        paragraphs.push(sep);
+                        blockquote = false;
+                    }
                     // Parse the paragraph into runs, which will handle simple formatting.
                     let runs = parse_paragraph(line);
 
