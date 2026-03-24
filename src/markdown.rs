@@ -81,7 +81,12 @@ fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
                                 .line_rule(LineSpacingType::Auto)
                                 .line(480), // double spaced
                         )
-                        .indent(Some(357), Some(SpecialIndentType::FirstLine(357)), None, None);
+                        .indent(
+                            Some(357),
+                            Some(SpecialIndentType::FirstLine(357)),
+                            None,
+                            None,
+                        );
                     for run in runs {
                         p = p.add_run(run).align(AlignmentType::Left);
                     }
