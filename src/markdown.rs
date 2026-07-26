@@ -279,7 +279,7 @@ fn trim_doublespace(s: &str) -> String {
 // Replace all links in a string with their target text
 // Credit: https://github.com/GeckoEidechse/remove-markdown-links
 fn trim_links(s: &str) -> String {
-    let re = Regex::new(r"\[([^\[\]]+)\]\(([^)]+)\)").unwrap();
+    let re = Regex::new(r"\[\[(?:[^\[\]|]*\|)?([^\[\]|]+)\]\]|\[([^\[\]]+)\]\((?:[^()]|\([^()]*\))*\)").unwrap();
     re.replace_all(s, |caps: &regex::Captures| {
         caps.get(1).unwrap().as_str().to_string()
     })
