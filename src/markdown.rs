@@ -1,7 +1,8 @@
 // use std::collections::HashMap;
 
 use docx_rs::*;
-use regex::Regex;
+use regex::{Captures, Regex};
+use std::sync::LazyLock;
 use yaml_front_matter::{Document, YamlFrontMatter};
 
 use crate::cmark::parse_paragraph;
@@ -10,6 +11,11 @@ use crate::context::Context;
 use crate::error::Md2msError;
 use crate::metadata::Metadata;
 use crate::pii::PII;
+
+static LINK_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\[\[(?:[^\[\]|]*\|)?([^\[\]|]+)\]\]|\[([^\[\]]+)\]\((?:[^()]|\([^()]*\))*\)")
+        .unwrap()
+});
 
 /// Strip Markdown comments out of the content
 fn strip_comments(mut content: String) -> String {
@@ -279,11 +285,14 @@ fn trim_doublespace(s: &str) -> String {
 // Replace all links in a string with their target text
 // Credit: https://github.com/GeckoEidechse/remove-markdown-links
 fn trim_links(s: &str) -> String {
-    let re = Regex::new(r"\[\[(?:[^\[\]|]*\|)?([^\[\]|]+)\]\]|\[([^\[\]]+)\]\((?:[^()]|\([^()]*\))*\)").unwrap();
-    re.replace_all(s, |caps: &regex::Captures| {
-        caps.get(1).unwrap().as_str().to_string()
-    })
-    .to_string()
+    LINK_RE
+        .replace_all(s, |caps: &Captures| {
+            caps.get(1)
+                .or_else(|| caps.get(2))
+                .map_or("", |m| m.as_str())
+                .to_string()
+        })
+        .into_owned()
 }
 
 #[cfg(test)]
@@ -337,7 +346,7 @@ mod tests {
 
     #[test]
     fn test_trim_links() {
-        let s = "This is a test. [This is a link](https://example.com). This is only a test.\nIf this were an actual emergency, you would be instructed where to go and what to do.";
+        let s = "This is a test. [This is a link](https://example.com). [[This is only a test]].\nIf this were an actual emergency, you would be instructed where to go and what to do.";
         // println!("{}", trim_links(s));
         assert!(trim_links(s) == "This is a test. This is a link. This is only a test.\nIf this were an actual emergency, you would be instructed where to go and what to do.");
     }
