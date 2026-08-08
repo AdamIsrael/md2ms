@@ -156,10 +156,6 @@ Here's another example, of a [three-act novella](./examples/novella_with_parts/)
 └── PII.md
 ```
 
-## Bugs
-
-- Remove extra scene breaks (`#`) after the title, after a header ("Act 1"), and at the end of a chapter.
-
 ### Configuration Files
 
 Right now there is no configuration file for `md2ms`. All options are passed via command-line arguments.
