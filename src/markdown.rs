@@ -343,9 +343,7 @@ mod tests {
 
     #[test]
     fn test_convert_smart_quotes() {
-        let content = convert_smart_quotes(
-            "“Go home,” Gabriel said.".to_string(),
-        );
+        let content = convert_smart_quotes("“Go home,” Gabriel said.".to_string());
         println!("{content}");
         assert!(content == "\"Go home,\" Gabriel said.");
     }
