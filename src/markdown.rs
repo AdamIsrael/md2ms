@@ -33,6 +33,14 @@ fn convert_hyphens_to_em_dashes(mut content: String) -> String {
     content.trim().to_string()
 }
 
+/// Convert Smart Quotes to straight quotes
+fn convert_smart_quotes(mut content: String) -> String {
+    let re = Regex::new(r"(“|”)").unwrap();
+    content = Regex::replace_all(&re, content.as_str(), "\"").to_string();
+
+    content.trim().to_string()
+}
+
 /// Convert the content of a Markdown into a collection of paragraphs.
 fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
     // Pre-process the content
@@ -42,6 +50,9 @@ fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
 
     // Replace double-hyphens to em-dashes
     content = convert_hyphens_to_em_dashes(content);
+
+    // Convert smart quotes to straight quotes
+    content = convert_smart_quotes(content);
 
     let mut paragraphs: Vec<Paragraph> = vec![];
     let sep = Paragraph::new()
@@ -328,6 +339,13 @@ mod tests {
     fn test_strip_comments() {
         let content = strip_comments(COMMENTS.to_string());
         assert!(content.is_empty());
+    }
+
+    #[test]
+    fn test_convert_smart_quotes() {
+        let content = convert_smart_quotes("“Go home,” Gabriel said.".to_string());
+        println!("{content}");
+        assert!(content == "\"Go home,\" Gabriel said.");
     }
 
     #[test]
