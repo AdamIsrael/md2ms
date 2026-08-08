@@ -30,6 +30,15 @@ fn strip_comments(mut content: String) -> String {
 fn convert_hyphens_to_em_dashes(mut content: String) -> String {
     let re = Regex::new(r"(\s+--\s+)").unwrap();
     content = Regex::replace_all(&re, content.as_str(), "—").to_string();
+
+    content.trim().to_string()
+}
+
+/// Format em-dashes correctly by stripping the space before/after
+fn format_em_dashes(mut content: String) -> String {
+    let re = Regex::new(r"(\s+—\s+)").unwrap();
+    content = Regex::replace_all(&re, content.as_str(), "—").to_string();
+
     content.trim().to_string()
 }
 
@@ -50,6 +59,9 @@ fn content_to_paragraphs(mut content: String) -> Vec<Paragraph> {
 
     // Replace double-hyphens to em-dashes
     content = convert_hyphens_to_em_dashes(content);
+
+    // Strip spaces before/after an em-dash
+    content = format_em_dashes(content);
 
     // Convert smart quotes to straight quotes
     content = convert_smart_quotes(content);
@@ -353,6 +365,13 @@ mod tests {
         let content = convert_hyphens_to_em_dashes(
             "This is a test -- only a test -- he was told.".to_string(),
         );
+        assert!(content == "This is a test—only a test—he was told.");
+    }
+
+    #[test]
+    fn test_format_em_dash() {
+        let content = format_em_dashes("This is a test — only a test — he was told.".to_string());
+        println!("{content}");
         assert!(content == "This is a test—only a test—he was told.");
     }
 
