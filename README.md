@@ -167,3 +167,21 @@ There are the supported types of scene breaks that are auto-deteected:
 - `\#`
 - `#`
 - Two or more blank lines
+
+## Release Workflow
+
+New releases are automatically released via workflow, on push of a versioned tag (e.g., v0.1.1)
+
+```bash
+# Update version in Cargo.toml
+git commit Cargo.toml -m "chore(release): Release version v0.1.1"
+git push
+
+git tag v0.1.1
+git push origin v0.1.1
+
+# Update crates.io with the new version
+cargo publish
+```
+
+When the release workflow is finished, it will create the Github release with the source and binaries attached.
